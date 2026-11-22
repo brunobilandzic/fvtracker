@@ -20,12 +20,9 @@ function DemoNavigation() {
           </span>
           FVTracker
         </Link>
-        <div className="flex flex-wrap justify-end gap-x-1">
-          <Link href="/trgovina" className={`${navItem} gap-1`}>
-            Proizvodi <FiArrowUpRight aria-hidden="true" size={13} />
-          </Link>
-          <Link href="/autorizacija" className={navItem}>Ručna prijava</Link>
-        </div>
+        <Link href="/trgovina" className={`${navItem} gap-1`}>
+          Proizvodi <FiArrowUpRight aria-hidden="true" size={13} />
+        </Link>
       </nav>
     </header>
   );

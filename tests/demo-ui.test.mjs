@@ -361,7 +361,7 @@ test("Homepage for visitors renders before JavaScript and refreshes without requ
       await page.getByRole("heading", { name: "FVTracker", exact: true }).waitFor();
       await page.getByRole("link", { name: "Proizvodi", exact: true }).waitFor();
       await page.getByText("Demo način rada · Promjene nisu dopuštene", { exact: true }).waitFor();
-      assert.equal(await page.getByRole("link", { name: "Ručna prijava", exact: true }).getAttribute("href"), "/autorizacija");
+      assert.equal(await page.getByRole("navigation").getByRole("link", { name: /prijava/i }).count(), 0);
       assert.equal(await fullScreenLoader(page).count(), 0);
       assert.equal(await page.getByText(/Korisni\u010dko ime:/).count(), 0);
     });
