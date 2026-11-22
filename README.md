@@ -20,7 +20,7 @@ Generate `AUTH_SECRET` privately with `node -e "process.stdout.write(require('no
 
 ## One-click demo sign-in
 
-With `DEMO_MODE=true`, the homepage offers five existing demo accounts. Copy their existing passwords from the ignored `.demo-credentials.json` file into the corresponding server environment variables. Set them privately in `.env.local` or in the applicable Vercel environment. A missing password makes that card return a safe unavailable message.
+With `DEMO_MODE=true`, the homepage offers an existing manager account and an existing employed worker account for each of the four sectors. Copy their existing passwords from the ignored `.demo-credentials.json` file into the corresponding server environment variables. Set them privately in `.env.local` or in the applicable Vercel environment. A missing password makes that card return a safe unavailable message.
 
 | Server variable | Seeded account |
 | --- | --- |
@@ -28,7 +28,10 @@ With `DEMO_MODE=true`, the homepage offers five existing demo accounts. Copy the
 | `DEMO_PRODUCTION_PASSWORD` | `pm` (Production Manager) |
 | `DEMO_WAREHOUSE_PASSWORD` | `wm` (Warehouse Manager) |
 | `DEMO_FINANCIAL_PASSWORD` | `fm` (Financial Manager) |
-| `DEMO_WORKER_PASSWORD` | `cwe` (employed Cultivation Worker) |
+| `DEMO_CULTIVATION_WORKER_PASSWORD` | `cwe` (employed Cultivation Worker) |
+| `DEMO_PRODUCTION_WORKER_PASSWORD` | `pwe` (employed Production Worker) |
+| `DEMO_WAREHOUSE_WORKER_PASSWORD` | `wwe` (employed Warehouse Worker) |
+| `DEMO_FINANCIAL_WORKER_PASSWORD` | `fwe` (employed Financial Worker) |
 
 Keep these variables server-only and keep the credentials file out of source control. Use the existing seeded database and its read-only runtime connection.
 

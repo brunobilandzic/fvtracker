@@ -215,7 +215,7 @@ test("One-click demo cards fit mobile and reject an unavailable selection", asyn
     await page.goto("/");
     const section = page.getByRole("region", { name: "Isprobajte FVTracker" });
     await section.waitFor();
-    assert.equal(await section.getByRole("button", { name: /^Isprobaj/ }).count(), 5);
+    assert.equal(await section.getByRole("button", { name: /^Isprobaj/ }).count(), 8);
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
 
     const button = section.getByRole("button", { name: /^Isprobaj/ }).first();
@@ -234,6 +234,9 @@ for (const [role, account, dashboard, identityKey, identityValue] of [
   ["warehouse", "wm", "/skladisne-jedinice", "managerModelName", "WarehouseManager"],
   ["financial", "fm", "/narudzbe", "managerModelName", "FinancialManager"],
   ["worker", "cwe", "/upravljanje-poljima/pregled", "workerType", "CultivationWorker"],
+  ["production-worker", "pwe", "/proizvodi", "workerType", "ProductionWorker"],
+  ["warehouse-worker", "wwe", "/skladiste-zahtjevi", "workerType", "WarehouseWorker"],
+  ["financial-worker", "fwe", "/narudzbe", "workerType", "FinancialWorker"],
 ]) {
   test(`One-click demo signs in the ${role} account`, realDemo, async () => {
     const file = process.env.FVTRACKER_TEST_CREDENTIALS ?? ".demo-credentials.json";
@@ -276,6 +279,7 @@ for (const [role, account, dashboard, identityKey, identityValue] of [
       const { user } = JSON.parse(session);
       assert.equal(user?.username, account);
       assert.equal(user[identityKey], identityValue);
+      if (identityKey === "workerType") assert.equal(user.employed, true);
       assert.equal(user.isAdmin, false);
       await page.getByRole("button", { name: "Odjava" }).first().waitFor();
     });
