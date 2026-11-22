@@ -12,13 +12,13 @@ export default function SiteLayout({ children, demoMode }) {
 
   return (
     <>
-      {!publicDemoHome && <Navbar />}
+      <Navbar publicDemoHome={publicDemoHome} />
       {demoMode && !publicDemoHome && (
         <p role="status" className="w-full px-4 py-2 text-center text-sm">
           Demonstracijski podaci. Promjene su onemogućene.
         </p>
       )}
-      <div className={publicDemoHome ? undefined : "mx-auto w-full max-w-6xl px-4 pt-10 pb-16"}>
+      <div className={`mx-auto w-full max-w-6xl px-4 ${publicDemoHome ? "pt-6 pb-6 sm:pt-8" : "pt-10 pb-16"}`}>
         <LoadingProvider>{children}</LoadingProvider>
       </div>
     </>

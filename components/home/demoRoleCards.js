@@ -47,12 +47,12 @@ export default function DemoRoleCards({ roles }) {
   }
 
   return (
-    <section aria-labelledby="demo-roles-title" className="mt-7 border-t border-[#dce5db] pt-5 sm:mt-8 sm:pt-6">
+    <section aria-labelledby="demo-roles-title" className="mt-7 border-t border-gray-200 pt-5 sm:mt-8 sm:pt-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <h2 id="demo-roles-title" className="text-xl font-semibold tracking-tight sm:text-2xl">
           Odaberite ulogu za pregled
         </h2>
-        <div role="tablist" aria-labelledby="demo-roles-title" className="inline-flex gap-1 rounded-xl border border-[#dce5db] bg-[#eaf0e8] p-1">
+        <div role="tablist" aria-labelledby="demo-roles-title" className="inline-flex gap-1 rounded-lg border border-gray-200 bg-gray-100 p-1">
           {tabs.map(({ id, title, Icon }, index) => {
             const current = index === activeTab;
             return (
@@ -67,7 +67,7 @@ export default function DemoRoleCards({ roles }) {
                 tabIndex={current ? 0 : -1}
                 onClick={() => setActiveTab(index)}
                 onKeyDown={event => handleTabKey(event, index)}
-                className={`inline-flex min-h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 ${current ? "bg-white text-[#1a4934] shadow-sm ring-1 ring-black/5" : "text-slate-600 hover:bg-white/60 hover:text-[#1a4934]"}`}
+                className={`inline-flex min-h-9 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700 ${current ? "bg-white text-green-800 shadow-sm ring-1 ring-black/5" : "text-gray-600 hover:bg-white/60 hover:text-green-800"}`}
               >
                 <Icon aria-hidden="true" size={15} />
                 {title}
@@ -91,12 +91,12 @@ export default function DemoRoleCards({ roles }) {
               {roles.filter(role => role.isWorker === isWorker).map(({ id, title, description }) => {
                 const Icon = icons[id];
                 return (
-                  <article key={id} className="flex min-w-0 flex-col rounded-2xl border border-[#dce5db] bg-white p-4 shadow-[0_1px_2px_#172c220a] transition-colors hover:border-emerald-400/60 focus-within:border-emerald-500 sm:p-5">
-                    <span className="grid size-10 place-items-center rounded-xl border border-[#e3eee5] bg-[#f0f7f1] text-[#276046]">
+                  <article key={id} className="card flex min-w-0 flex-col transition-colors hover:border-green-300 focus-within:border-green-500">
+                    <span className="grid size-10 place-items-center rounded-lg bg-green-50 text-green-800">
                       <Icon aria-hidden="true" size={20} />
                     </span>
                     <h3 className="mt-3 font-semibold leading-snug tracking-tight">{title}</h3>
-                    <p className="mt-1.5 flex-1 text-sm leading-relaxed text-slate-600">{description}</p>
+                    <p className="mt-1.5 flex-1 text-sm leading-relaxed text-gray-600">{description}</p>
                     <button
                       type="submit"
                       name="role"
@@ -104,7 +104,7 @@ export default function DemoRoleCards({ roles }) {
                       aria-label={"Isprobaj: " + title}
                       disabled={pending}
                       onClick={() => setSelected(id)}
-                      className="mt-4 flex min-h-10 w-full items-center justify-between gap-2 rounded-lg border border-[#dce9df] bg-[#f4f8f4] px-3 py-2 text-left text-sm font-semibold text-[#1c5239] transition-colors hover:border-[#1b543d] hover:bg-[#1b543d] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 disabled:cursor-wait disabled:opacity-70"
+                      className="btn mt-4 flex min-h-10 w-full min-w-0 items-center justify-between gap-2 bg-green-700 text-left text-sm font-semibold text-white hover:bg-green-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700 disabled:cursor-wait disabled:opacity-70"
                     >
                       {pending && selected === id ? "Prijava u tijeku..." : "Isprobaj"}
                       {pending && selected === id ? (

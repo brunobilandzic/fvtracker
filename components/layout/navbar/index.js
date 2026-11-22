@@ -37,25 +37,30 @@ export default {
   roleitems,
 };
 
-export function Navbar() {
+export function Navbar({ publicDemoHome = false }) {
   const { data: session, status } = useSession();
   const authenticated = Boolean(session?.user);
   return (
-    <div className="z-[200] navbar relative h-16 bg-[var(--navbar-bg)] flex items-center px-10 text-[var(--text-navbar)]">
+    <nav aria-label="Glavna navigacija" className={`z-[200] navbar relative h-16 bg-[var(--navbar-bg)] flex items-center text-[var(--text-navbar)] ${publicDemoHome ? "px-4 sm:px-10" : "px-10"}`}>
       <div className="flex-1 flex justify-start items-center">
-        {" "}
         <NavLogo />
       </div>
-      <div className="absolute left-1/2 -translate-x-1/2 flex gap-8">
-        <NavItems />
-      </div>
+      {!publicDemoHome && (
+        <div className="absolute left-1/2 -translate-x-1/2 flex gap-8">
+          <NavItems />
+        </div>
+      )}
       <div className=" flex-1 flex justify-end items-center gap-8 ">
-        {authenticated ? (
+        {publicDemoHome ? (
+          <Link href="/trgovina" className="rounded-md px-2 py-2 text-sm font-medium transition-colors hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">
+            Proizvodi
+          </Link>
+        ) : authenticated ? (
           <button
             type="button"
             aria-label="Odjava"
             className="cursor-pointer"
-            onClick={() => signOut({ redirectTo: "/autorizacija" })}
+            onClick={() => signOut({ redirectTo: "/" })}
           >
             <LogoutSolid />
           </button>
@@ -65,15 +70,15 @@ export function Navbar() {
           </Link>
         )}
       </div>
-    </div>
+    </nav>
   );
 }
 
 function NavLogo() {
   return (
-    <h1 className="text-lg font-bold">
-      <Link href="/">FvTracker</Link>
-    </h1>
+    <Link href="/" className="rounded-sm text-lg font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">
+      FVTracker
+    </Link>
   );
 }
 

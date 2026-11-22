@@ -367,12 +367,15 @@ test("Homepage for visitors renders before JavaScript and refreshes without requ
     });
     await page.reload();
     await page.getByRole("heading", { name: "FVTracker", exact: true }).waitFor();
+    const nav = page.getByRole("navigation", { name: "Glavna navigacija" });
+    const homepageNavbarColor = await nav.evaluate(element => getComputedStyle(element).backgroundColor);
     assert.equal(requests(), 0);
     assert.equal(catalogRequests, 0, "The homepage only needs the catalog link");
 
     const catalog = page.waitForResponse(response => new URL(response.url()).pathname === "/api/products");
     await page.getByRole("link", { name: "Proizvodi", exact: true }).click();
     assert.equal((await catalog).status(), 200);
+    assert.equal(await nav.evaluate(element => getComputedStyle(element).backgroundColor), homepageNavbarColor);
   });
 });
 
@@ -439,10 +442,12 @@ test("Login and logout update the homepage without a fullscreen loader or redire
     assert.equal(requests(), 1, "Only the login session refresh is expected");
     assert.equal(await fullScreenLoader(page).count(), 0);
 
+    await page.getByRole("navigation").getByRole("link", { name: "postrojenja", exact: true }).click();
+    await page.waitForURL(url => url.pathname === "/postrojenja");
     await page.getByRole("button", { name: "Odjava" }).click();
-    await page.waitForURL(url => url.pathname === "/autorizacija");
-    await page.goto("/");
+    await page.waitForURL(url => url.pathname === "/");
     await page.getByRole("heading", { name: "FVTracker", exact: true }).waitFor();
+    await page.getByRole("tab", { name: "Menadžeri" }).waitFor();
     assert.equal(await page.getByText("Korisni\u010dko ime: pm", { exact: true }).count(), 0);
     assert.equal(await fullScreenLoader(page).count(), 0);
   });
