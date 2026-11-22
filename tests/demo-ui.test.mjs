@@ -470,6 +470,45 @@ test("Warehouse requests load with scoped shipment data and without loading all 
   });
 });
 
+test("Logout cancels the pending production request before the session closes", realDemo, async () => {
+  await checkPage({ account: "pm" }, async page => {
+    let releaseProduction;
+    let releaseLogout;
+    const pendingProduction = new Promise(resolve => { releaseProduction = resolve; });
+    const pendingLogout = new Promise(resolve => { releaseLogout = resolve; });
+    const productionPath = "**/api/productionManager";
+    const logoutPath = "**/api/auth/signout";
+
+    await page.route(productionPath, async route => {
+      await pendingProduction;
+      await route.fulfill({ status: 500, json: { error: "Request failed" } }).catch(() => {});
+    });
+    await page.route(logoutPath, async route => {
+      await pendingLogout;
+      await route.fallback();
+    });
+
+    try {
+      const production = page.waitForRequest(productionPath);
+      await page.goto("/postrojenja");
+      const request = await production;
+      const failed = page.waitForEvent("requestfailed", event => event === request);
+      const logout = page.waitForRequest(logoutPath);
+      await page.getByRole("button", { name: "Odjava" }).click();
+      await logout;
+      assert.equal((await failed).failure()?.errorText, "net::ERR_ABORTED");
+    } finally {
+      releaseProduction();
+      releaseLogout();
+    }
+
+    await page.waitForURL(url => url.pathname === "/");
+    await page.getByRole("tab", { name: "Menad\u017eeri" }).waitFor();
+    const session = await (await page.request.get("/api/auth/session")).json();
+    assert(!session?.user);
+  });
+});
+
 test("Axios intercepts JSON and multipart writes before transport and leaves reads working", async () => {
   const attempted = [];
   const adapter = async config => {

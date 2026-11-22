@@ -4,7 +4,7 @@ import Link from "next/link";
 import { DemoActionLink } from "@/components/layout/demoActions";
 import roleitems, { adminNavItems, guestNavItems } from "./roleitems";
 import { signOut, useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "@/store/userSlice";
 import { refreshFields } from "@/lib/utils/cultivation/fields/fields";
@@ -40,6 +40,29 @@ export default {
 export function Navbar({ publicDemoHome = false }) {
   const { data: session, status } = useSession();
   const authenticated = Boolean(session?.user);
+  const user = session?.user;
+  const dispatch = useDispatch();
+  const productionRequest = useRef(null);
+  const manager = canShowManagerLinks(user) ? user.managerModelName : null;
+  const allProduction = Boolean(user?.isAdmin || manager === GENERAL_MANAGER || manager === FINANCIAL_MANAGER);
+  const loadProduction = allProduction || manager === PRODUCTION_MANAGER ||
+    (user?.workerType === "ProductionWorker" && user.employed);
+  const userId = user?.appUserId;
+
+  useEffect(() => {
+    if (status !== "authenticated" || !loadProduction) return;
+
+    const controller = new AbortController();
+    productionRequest.current = controller;
+    fillProductionRedux({ dispatch, all: allProduction, signal: controller.signal });
+    return () => controller.abort();
+  }, [status, userId, loadProduction, allProduction, dispatch]);
+
+  function handleLogout() {
+    productionRequest.current?.abort();
+    return signOut({ redirectTo: "/" });
+  }
+
   return (
     <nav aria-label="Glavna navigacija" className={`z-[200] navbar relative h-16 bg-[var(--navbar-bg)] flex items-center text-[var(--text-navbar)] ${publicDemoHome ? "px-4 sm:px-10" : "px-10"}`}>
       <div className="flex-1 flex justify-start items-center">
@@ -60,7 +83,7 @@ export function Navbar({ publicDemoHome = false }) {
             type="button"
             aria-label="Odjava"
             className="cursor-pointer"
-            onClick={() => signOut({ redirectTo: "/" })}
+            onClick={handleLogout}
           >
             <LogoutSolid />
           </button>
@@ -120,7 +143,6 @@ function NavItems() {
       ) {
         dispatch(fetchEmploymentRequests());
         refreshFields({ dispatch, router, generalManager: true, fieldsRedux });
-        fillProductionRedux({ dispatch, router, all: true });
       }
       if (
         managerModelName === CULTIVATION_MANAGER &&
@@ -140,12 +162,6 @@ function NavItems() {
             fieldsRedux,
           });
         }
-      }
-      if (managerModelName === PRODUCTION_MANAGER) {
-        console.log(
-          "production manager logged in, refreshing producti data...",
-        );
-        fillProductionRedux({ dispatch, router });
       }
       if (managerModelName === WAREHOUSE_MANAGER) {
         console.log(
@@ -185,7 +201,6 @@ function NavItems() {
       fillWarehouseRequestsRedux({ dispatch });
       fetchEmploymentRequests();
       refreshFields({ dispatch, router, generalManager: true, fieldsRedux });
-      fillProductionRedux({ dispatch, router, all: true });
     }
   }, [status]);
 
@@ -196,10 +211,6 @@ function NavItems() {
       if (!session.user.employed) {
         console.log("User is not employed, skipping worker data refresh");
         return;
-      }
-      if (session.user.workerType === "ProductionWorker") {
-        console.log("Production worker logged in, refreshing product data...");
-        fillProductionRedux({ dispatch, router });
       }
       if (session.user.workerType === "WarehouseWorker") {
         console.log("Warehouse worker logged in, refreshing warehouse data...");
