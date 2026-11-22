@@ -1,22 +1,20 @@
+import { protectApi } from "@/lib/auth/protectApi";
 import {
   fetchAdmin,
   fetchSessionSpecificManager,
 } from "@/lib/auth/fetchSessionData";
 import { ROLE_STATUSES } from "@/lib/constants/users";
 import { GENERAL_MANAGER } from "@/lib/constants/users/managerTypes";
-import dbConnect from "@/lib/db/mongooseConnect";
 import { RoleRequest } from "@/models/documents/requests/RoleRequest";
 
-export async function PUT(req) {
+async function handlePUT(req) {
   // do not mix req response with Next.js Response object
   try {
-    await dbConnect();
     const { admin } = await fetchAdmin();
-    if (!admin) {
-      await fetchSessionSpecificManager({ managerName: GENERAL_MANAGER });
-    }
+    const manager = admin ? null : await fetchSessionSpecificManager({ managerName: GENERAL_MANAGER });
     const { requestId, response } = await req.json();
-    const roleRequest = await RoleRequest.findById(requestId);
+    if (!Object.values(ROLE_STATUSES).includes(response)) return new Response(null, { status: 400 });
+    const roleRequest = await RoleRequest.findOne({ _id: requestId, ...(manager && { generalManager: manager._id }) });
     if (!roleRequest) {
       return Response.json(
         { error: "Zahtjev nije pronađen." },
@@ -46,16 +44,18 @@ export async function PUT(req) {
     await RoleRequest.updateOne(
       { _id: requestId },
       { status: response, respondedAt: new Date() },
+      { runValidators: true },
     );
     return Response.json(
       { message: `Role request status updated to ${response}` },
       { status: 200 },
     );
-  } catch (error) {
-    console.error("Error processing role request:", error);
+  } catch {
     return Response.json(
       { error: "Error processing role request." },
       { status: 500 },
     );
   }
 }
+
+export const PUT = protectApi(handlePUT, ["Admin", "GeneralManager"]);

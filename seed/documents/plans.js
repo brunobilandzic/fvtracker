@@ -20,8 +20,6 @@ export async function createPlans({ fieldId, cropVarietyIds }) {
   const productionManager = await ProductionManager.findOne({
     rootManager: appUser.rootManager._id,
   });
-  await HarvestingPlan.deleteMany({});
-  await PlantingPlan.deleteMany({});
 
   const { plantingPlan, harvestingPlan } = planInfo({
     fieldId,

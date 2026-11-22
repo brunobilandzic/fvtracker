@@ -10,7 +10,7 @@ const check = async () => {
   return admin;
 };
 
-export const createAdmin = async () => {
+export const createAdmin = async (password) => {
   const existingAdmin = await check();
   if (existingAdmin) {
     return existingAdmin;
@@ -18,7 +18,7 @@ export const createAdmin = async () => {
 
   console.log("Creating admin user...");
   const adminData = appUsersJsonArray.find((user) => user.username === "admin");
-  const adminAppUser = new AppUser({ ...adminData, isAdmin: true });
+  const adminAppUser = new AppUser({ ...adminData, isAdmin: true, password });
   await adminAppUser.save();
 
   const admin = new Admin({

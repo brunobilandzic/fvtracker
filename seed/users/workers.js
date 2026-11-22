@@ -12,11 +12,14 @@ import { FinancialWorker } from "@/models/user/workers/FinancialWork";
 import { FinancialManager } from "@/models/user/managers/FinancialManager";
 import { EmploymentRequest } from "@/models/user/workers/EmploymentRequest";
 
-export const seedWorkers = async () => {
+export const seedWorkers = async (passwords) => {
   await dbConnect();
-  await Worker.deleteMany({});
   for (const workerData of workersJson) {
-    const appUser = new AppUser(workerData);
+    const appUser = new AppUser({
+      ...workerData,
+      demoAccount: true,
+      password: passwords.get(workerData.username),
+    });
     await appUser.save();
     let employmentRequest;
     switch (workerData.modelName) {

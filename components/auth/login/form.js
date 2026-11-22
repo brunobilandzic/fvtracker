@@ -7,7 +7,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Loading } from "@/components/layout/loading";
 
-function LoginForm() {
+function LoginForm({ allowRegistration }) {
   const { status } = useSession();
   const [loginData, setLoginData] = useState({});
   const [error, setError] = useState("");
@@ -38,8 +38,8 @@ function LoginForm() {
       redirect: false,
     });
 
-    if (res?.error) {
-      setError(res.code || "Prijava nije uspjela.");
+    if (!res?.ok || res.error) {
+      setError("Prijava nije uspjela.");
       return;
     }
 
@@ -77,12 +77,12 @@ function LoginForm() {
         <div className={`btn submitButton`} onClick={onSubmit}>
           Prijava
         </div>
-        <div
+        {allowRegistration && <div
           className={`btn btnSecondary`}
           onClick={() => router.push("/registracija")}
         >
           Registracija
-        </div>
+        </div>}
       </div>
     </div>
   );

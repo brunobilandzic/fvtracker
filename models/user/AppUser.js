@@ -21,7 +21,9 @@ const appUserSchema = new Schema({
   },
   password: {
     type: String,
+    select: false,
   },
+  demoAccount: { type: Boolean, default: false, select: false },
   surname: {
     type: String,
   },
@@ -41,12 +43,22 @@ const appUserSchema = new Schema({
   },
 });
 
-appUserSchema.pre("save", function (next) {
+appUserSchema.pre("save", function () {
   if ((this.isModified("name") || this.isModified("surname")) && this.name) {
     const fullName = this.surname ? `${this.name} ${this.surname}` : this.name;
     this.slug = utils.strings.makeUrlFriendly(fullName);
   }
 });
+
+for (const option of ["toJSON", "toObject"]) {
+  appUserSchema.set(option, {
+    transform(_document, result) {
+      delete result.password;
+      delete result.demoAccount;
+      return result;
+    },
+  });
+}
 
 appUserSchema.methods.getRootManager = async function () {
   await this.populate("rootManager");

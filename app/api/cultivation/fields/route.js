@@ -1,23 +1,30 @@
-import dbConnect from "@/lib/db/mongooseConnect";
+import { getScopedField } from "@/lib/auth/recordScope";
+import { protectApi } from "@/lib/auth/protectApi";
 import cultivation from "@/lib/cultivation";
 import { ROLE_STATUSES } from "@/lib/constants/users";
 import { fetchManager, fetchManagerWorker } from "@/lib/auth/fetchSessionData";
 import { CULTIVATION_MANAGER } from "@/lib/constants/users/managerTypes";
-import { deleteFields } from "@/lib/cultivation/fields";
 import { managerMorkerMap } from "@/lib/constants/users/managerWorker";
 import { CultivationManager } from "@/models/user/managers/CultivationManager";
+import { Field } from "@/models/sectors/cultivation/Field";
 import fieldsPopulate from "./populate";
 
-export async function GET(request) {
+async function handleGET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const slug = searchParams.get("slug");
-    await dbConnect();
-    let { specificManager: cultivationManager, worker: cultivationWorker } =
+    let { specificManager: cultivationManager, worker: cultivationWorker, generalManager, isAdmin } =
       await fetchManagerWorker({
         managerNames: [CULTIVATION_MANAGER],
         workerType: managerMorkerMap[CULTIVATION_MANAGER],
       });
+    if (isAdmin || generalManager) {
+      const fieldFilter = slug ? { slug } : {};
+      const fields = await Field.find(fieldFilter).populate(fieldsPopulate);
+      if (!slug) return Response.json({ fields });
+      if (!fields.length) return new Response(null, { status: 404 });
+      return Response.json({ field: fields[0] });
+    }
     if (cultivationWorker) {
       await cultivationWorker.populate({
         path: "manager",
@@ -67,54 +74,37 @@ export async function GET(request) {
         { status: 200 },
       );
     }
-  } catch (error) {
-    console.error(error);
-    return Response.json({ error: error.message }, { status: 500 });
+  } catch {
+    return Response.json({ error: "Request failed" }, { status: 500 });
   }
 }
 
-export async function POST(request) {
+async function handlePOST(request) {
   try {
-    await dbConnect();
     const body = await request.json();
     const field = await cultivation.fields.create(body);
     return Response.json({ field }, { status: 201 });
-  } catch (error) {
-    console.error(error);
-    return Response.json({ error: error.message }, { status: 500 });
+  } catch {
+    return Response.json({ error: "Request failed" }, { status: 500 });
   }
 }
 
-export async function DELETE(request) {
+async function handleDELETE(request) {
   try {
-    await dbConnect();
-    const { generalManager, specificManager } = await fetchManager({
-      managerNames: [CULTIVATION_MANAGER],
-    });
-    const { searchParams } = new URL(request.url);
-    const slug = searchParams.get("slug");
-
-    if (!slug) {
-      if (generalManager) {
-        await deleteFields({});
-      } else if (specificManager) {
-        await deleteFields({ cultivationManager: specificManager._id });
-      }
-      return Response.json({ message: "Slug is required" }, { status: 400 });
-    }
-
-    const deletedField = await deleteFields({ slug });
-
-    if (!deletedField) {
-      return Response.json({ message: "Field not found" }, { status: 404 });
-    }
-
+    const slug = request.nextUrl.searchParams.get("slug");
+    if (!slug) return new Response(null, { status: 400 });
+    const field = await getScopedField({ slug });
+    if (!field) return new Response(null, { status: 404 });
+    await field.deleteOne();
     return Response.json(
       { message: "Field deleted successfully" },
       { status: 200 },
     );
-  } catch (error) {
-    console.error(error);
-    return Response.json({ error: error.message }, { status: 500 });
+  } catch {
+    return Response.json({ error: "Request failed" }, { status: 500 });
   }
 }
+
+export const GET = protectApi(handleGET, ["Admin", "GeneralManager", "CultivationManager", "CultivationWorker"]);
+export const POST = protectApi(handlePOST, ["CultivationManager"]);
+export const DELETE = protectApi(handleDELETE, ["Admin", "GeneralManager", "CultivationManager"]);

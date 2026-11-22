@@ -185,7 +185,6 @@ export const createNewPlantage = async ({
   cultivationDimensions,
   cultivationId,
 }) => {
-  await PlantageWork.deleteMany();
   await PlantedCropVariety.updateMany(
     {},
     {
@@ -280,8 +279,6 @@ export const createNewHarvest = async ({
   cultivationId,
 }) => {
   console.log("creating harvest...");
-  await HarvestingBatchItem.deleteMany();
-  await HarvestWork.deleteMany();
 
   for (const [cvName, plantedCoords] of Object.entries(plantedMap)) {
     const harvestingPlanItem = harvestingPlan.items.find(
@@ -353,9 +350,6 @@ const deletePlantageHarvest = async () => {
     {},
     { plantingPlanItem: null, harvestingPlanItem: null },
   );
-  await PlantingPlan.deleteMany({});
-  await HarvestingPlan.deleteMany({});
-  await HarvestingBatch.deleteMany({});
 };
 
 export const seedPlantageHarvest = async ({ _fieldId, cultivation }) => {

@@ -22,16 +22,15 @@ export const FinancialReport = ({}) => {
   const orders = useSelector((state) => state.webstore.orders.items);
   const workers = useSelector((state) => state.workers.items);
   const procurments = useSelector((state) => state.procurments.items);
-  console.log({ procurments });
+  const warehouseRequests = useSelector(
+    (state) => state.warehouse.warehouseRequests,
+  );
   if (!orders || !workers) return <LoadingFullScreen />;
 
   const uniqueCustomers = getUniqueCustomers(orders);
   const uniqueProducts = getUniqueProducts(orders);
   const totalItems = getOrdersTotalItems(orders);
   const totalRevenue = ordersTotalAmount(orders);
-  const warehouseRequests = useSelector(
-    (state) => state.warehouse.warehouseRequests,
-  );
   const {
     totalPrice: invoicedPrice,
     totalItems: totalReceiptItems,

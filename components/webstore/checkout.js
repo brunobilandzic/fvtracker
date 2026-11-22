@@ -35,12 +35,7 @@ export const CustomerInfoForm = ({
         value={customerData.surname}
         onChange={onChange}
       />
-      <AppInput
-        label="Email"
-        name="email"
-        value={customerData.email}
-        onChange={onChange}
-      />
+      <p>Email: {customerData.email}</p>
       <AppInput
         label="Adresa"
         name="address"

@@ -1,68 +1,39 @@
-import { fetchSessionSpecificManager } from "@/lib/auth/fetchSessionData";
-import { CULTIVATION_MANAGER } from "@/lib/constants/users/managerTypes";
+import { getScopedField } from "@/lib/auth/recordScope";
+import { protectApi } from "@/lib/auth/protectApi";
 import cultivation from "@/lib/cultivation";
 import { populatePlans } from "@/lib/cultivation/plans";
-import dbConnect from "@/lib/db/mongooseConnect";
 
-export async function POST(request) {
+async function handlePOST(request) {
   try {
-    await dbConnect();
-    await fetchSessionSpecificManager({ managerName: CULTIVATION_MANAGER });
     const body = await request.json();
+    if (!body.field || !await getScopedField({ _id: body.field })) return new Response(null, { status: 404 });
     const newPlantingPlan = await cultivation.plans.createPlantingPlan({
       plantingPlanData: body,
     });
     await populatePlans({ plans: [newPlantingPlan] });
     return Response.json({ newPlantingPlan }, { status: 201 });
-  } catch (error) {
-    console.error(error);
-    return Response.json({ error: error.message }, { status: 500 });
+  } catch {
+    return Response.json({ error: "Request failed" }, { status: 500 });
   }
 }
 
-export async function DELETE(request) {
+async function handleDELETE(request) {
   try {
-    await dbConnect();
-    await fetchSessionSpecificManager({ managerName: CULTIVATION_MANAGER });
 
-    let fieldId, planId;
-    try {
-      const body = await request.json();
-      ({ fieldId, planId } = body);
-    } catch {
-      // no body - delete all
-    }
-
+    const { planId } = await request.json();
+    if (!planId) return new Response(null, { status: 400 });
+    const field = await getScopedField({ plantingPlans: planId });
+    if (!field) return new Response(null, { status: 404 });
+    const fieldId = field._id;
     await cultivation.plans.deletePlantingPlans({ fieldId, planId });
     return Response.json(
       { message: "Planting plans deleted" },
       { status: 200 },
     );
-  } catch (error) {
-    console.error(error);
-    return Response.json({ error: error.message }, { status: 500 });
+  } catch {
+    return Response.json({ error: "Request failed" }, { status: 500 });
   }
 }
 
-export async function PUT(request) {
-  try {
-    await dbConnect();
-    await fetchSessionSpecificManager({ managerName: CULTIVATION_MANAGER });
-    const body = await request.json();
-    const { planId, ...planData } = body;
-
-    if (!planId) {
-      return Response.json({ error: "planId is required" }, { status: 400 });
-    }
-
-    const updatedPlantingPlan = await cultivation.plans.updatePlantingPlan({
-      planId,
-      plantingPlanData: planData,
-    });
-
-    return Response.json({ updatedPlantingPlan }, { status: 200 });
-  } catch (error) {
-    console.error(error);
-    return Response.json({ error: error.message }, { status: 500 });
-  }
-}
+export const POST = protectApi(handlePOST, ["Admin", "GeneralManager", "CultivationManager"]);
+export const DELETE = protectApi(handleDELETE, ["Admin", "GeneralManager", "CultivationManager"]);

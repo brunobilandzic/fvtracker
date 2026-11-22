@@ -5,10 +5,10 @@ import { signOut } from "next-auth/react";
 import Link from "next/link";
 import LoginForm from "./form";
 
-function LoginPageComponent() {
+function LoginPageComponent({ allowRegistration }) {
   return (
     <div>
-      <LoginForm />
+      <LoginForm allowRegistration={allowRegistration} />
     </div>
   );
 }

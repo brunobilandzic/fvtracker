@@ -1,14 +1,13 @@
+import { protectApi } from "@/lib/auth/protectApi";
 import { fetchManager } from "@/lib/auth/fetchSessionData";
-import dbConnect from "@/lib/db/mongooseConnect";
 import {
   CULTIVATION_MANAGER,
   PRODUCTION_MANAGER,
 } from "@/lib/constants/users/managerTypes";
 import { ProductionManager } from "@/models/user/managers/ProductionManager";
 
-export async function GET(request) {
+async function handleGET(request) {
   try {
-    await dbConnect();
     const { searchParams } = new URL(request.url);
     const queryAll = searchParams.get("all");
     const { generalManager, specificManager: productionManager } =
@@ -28,10 +27,12 @@ export async function GET(request) {
       return Response.json({ productionManagers });
     }
     return Response.json({ productionManager });
-  } catch (error) {
+  } catch {
     return Response.json(
       { error: "Failed to fetch production manager" },
       { status: 500 },
     );
   }
 }
+
+export const GET = protectApi(handleGET, ["Admin", "GeneralManager", "CultivationManager", "ProductionManager"]);

@@ -39,7 +39,7 @@ export const CreateWorker = () => {
       name: "worker",
       surname: "test",
       email: "workertest@gmail.com",
-      password: "1",
+      password: "",
       username: "workertest",
       managerModelName: CULTIVATION_MANAGER,
     };
@@ -49,7 +49,7 @@ export const CreateWorker = () => {
       name: "worker",
       surname: "test",
       email: "wt@mail.com",
-      password: "1",
+      password: "",
       username: "wt",
       managerModelName: managerModelName,
     };
@@ -58,7 +58,7 @@ export const CreateWorker = () => {
       name: "worker",
       surname: "test manager",
       email: "workertestmanager@gmail.com",
-      password: "1",
+      password: "",
       username: "workertest",
       managerModelName: managerModelName,
     };
@@ -106,7 +106,6 @@ export const CreateWorker = () => {
   };
 
   const onSubmit = async () => {
-    console.log("Submitting worker data:", { workerData });
 
     try {
       dispatch(setLoading(true));
@@ -114,11 +113,9 @@ export const CreateWorker = () => {
       alert(`Radnik uspešno kreiran.`, {
         type: "success",
       });
-      console.log("Worker created successfully:", res.data.worker);
       dispatch(addWorker(res.data.worker));
       router.push("/radnici");
     } catch (error) {
-      console.error("Error creating worker:", error);
       handleError(
         {
           ...error,

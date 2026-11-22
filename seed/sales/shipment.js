@@ -6,12 +6,14 @@ import { Warehouse } from "@/models/sectors/storage/Warehouse";
 
 export const createShipments = async ({ warehouseRequests }) => {
   const warehouseWorker = await getEmployedWorker("WarehouseWorker");
+  let firstShipment = true;
   for (const warehouseRequest of warehouseRequests) {
     await warehouseRequest.populate(warehouseRequestPopulateShipmentItems);
     const orderItems = warehouseRequest.order.items;
     const sources = await buildShipmentSources({
       orderItems,
       warehouseManagerId: warehouseRequest.warehouseManager,
+      includeFirst: firstShipment,
     });
     if (sources.length === 0) {
       continue;
@@ -22,7 +24,7 @@ export const createShipments = async ({ warehouseRequests }) => {
       workerId: warehouseWorker._id,
     });
 
-    if (Math.random() < 0.5) {
+    if (firstShipment || Math.random() < 0.5) {
       const financialWorker = await getEmployedWorker("FinancialWorker");
       const receipt = new Receipt({
         shipmentItem: shipmentItem._id,
@@ -31,18 +33,21 @@ export const createShipments = async ({ warehouseRequests }) => {
       shipmentItem.receipt = receipt._id;
       financialWorker.receipts.push(receipt._id);
 
+      warehouseRequest.order.receipts.push(receipt._id);
+      await warehouseRequest.order.save();
       await financialWorker.save();
       await shipmentItem.save();
       await receipt.save();
     }
+    firstShipment = false;
   }
 };
 
-const buildShipmentSources = async ({ orderItems, warehouseManagerId }) => {
+const buildShipmentSources = async ({ orderItems, warehouseManagerId, includeFirst }) => {
   const sources = [];
 
   for (const oi of orderItems) {
-    if (Math.random() < 0.5) {
+    if (!(includeFirst && sources.length === 0) && Math.random() < 0.5) {
       continue;
     }
     const quantity = Math.floor(Math.random() * oi.quantity) + 1;

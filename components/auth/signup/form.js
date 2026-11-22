@@ -19,11 +19,11 @@ function SignUpForm() {
   const { session, status } = useSession();
   const testSignUpData = {
     email: `${new Date().getTime()}@example.com`,
-    username: `brunobilandzic${Math.random().toString(16).slice(3, 6)}`,
+    username: "",
     name: `Bruno${new Date().getTime()}`,
     surname: "Bilandžić",
-    password: "1",
-    passwordConfirm: "1",
+    password: "",
+    passwordConfirm: "",
     requestedRole: null,
   };
 

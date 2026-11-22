@@ -1,12 +1,12 @@
+import { getScopedCultivation, getAssignableWorker, getScopedField } from "@/lib/auth/recordScope";
+import { protectApi } from "@/lib/auth/protectApi";
 import { fetchManagerWorker } from "@/lib/auth/fetchSessionData";
 import { CULTIVATION_MANAGER } from "@/lib/constants/users/managerTypes";
 import { managerMorkerMap } from "@/lib/constants/users/managerWorker";
 import { harvestCells } from "@/lib/cultivation/harvest";
-import dbConnect from "@/lib/db/mongooseConnect";
 
-export async function POST(req) {
+async function handlePOST(req) {
   try {
-    await dbConnect();
     const {
       specificManager: cultvationManager,
       worker,
@@ -22,6 +22,12 @@ export async function POST(req) {
       );
     }
     const body = await req.json();
+    const record = await getScopedCultivation(body.cultivationId);
+    const assignee = await getAssignableWorker(body.workerId, "CultivationWorker");
+    if (!record || !assignee) return new Response(null, { status: 404 });
+    await record.populate({ path: "cultivationArea", select: "field" });
+    const planFilter = { harvestingPlans: body.harvestingPlanId };
+    if (!await getScopedField({ _id: record.cultivationArea.field, ...planFilter })) return new Response(null, { status: 404 });
     const newHarvest = body;
     const { harvestWork, harvestedCropVarieties } =
       await harvestCells(newHarvest);
@@ -29,11 +35,12 @@ export async function POST(req) {
       { harvestWork, harvestedCropVarieties },
       { status: 201 },
     );
-  } catch (error) {
-    console.error("Error creating new harvest:", error);
+  } catch {
     return Response.json(
       { message: "Error creating new harvest" },
       { status: 500 },
     );
   }
 }
+
+export const POST = protectApi(handlePOST, ["Admin", "GeneralManager", "CultivationManager", "CultivationWorker"]);

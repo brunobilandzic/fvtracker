@@ -1,9 +1,8 @@
+import { protectApi } from "@/lib/auth/protectApi";
 import mongoose from "mongoose";
-import dbConnect from "@/lib/db/mongooseConnect";
 import { findManagerName } from "./naming";
 
-export async function GET(request) {
-  await dbConnect();
+async function handleGET(request) {
   const { searchParams } = new URL(request.url);
   const managersType = searchParams.get("managersType");
   const all = searchParams.get("all");
@@ -16,17 +15,20 @@ export async function GET(request) {
       });
     return Response.json({ managers: rootManagers });
   }
+  const model = findManagerName({ managersType });
+  if (!model) return new Response(null, { status: 400 });
   const managers = await mongoose
-    .model(findManagerName({ managersType: managersType }))
+    .model(model)
     .find()
     .populate([
       {
         path: "rootManager",
         select: "appUser",
-        populate: "appUser",
-        select: "name surname",
+        populate: { path: "appUser", select: "name surname" },
       },
     ]);
 
   return Response.json({ managers });
 }
+
+export const GET = protectApi(handleGET, ["Admin", "GeneralManager", "CultivationManager", "ProductionManager", "FinancialManager", "WarehouseManager", "FinancialWorker"]);

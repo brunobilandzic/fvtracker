@@ -49,3 +49,5 @@ client_secret*
 .vscode
 
 .claude
+!.env.example
+.demo-credentials.json

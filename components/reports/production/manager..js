@@ -12,6 +12,8 @@ import { LoadingFullScreen } from "@/components/layout/loading";
 export const ProductionReport = ({}) => {
   const products = useSelector((state) => state.production?.products.items);
 
+  const facilities = useSelector((state) => state.production?.facilities.items);
+
   if (!products) return <LoadingFullScreen />;
 
   const productionStockQuantity = getProductionStockQuantity(products);
@@ -19,8 +21,6 @@ export const ProductionReport = ({}) => {
   const uniqueIngredients = getUniqueIngredients(products);
   const shipmentSourcesCount = getshipmentSourcesCountProducts(products);
 
-  const facilities = useSelector((state) => state.production?.facilities.items);
-  if (!products) return null;
 
   if (products.length === 0)
     return (

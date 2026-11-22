@@ -6,7 +6,6 @@ import {
   HarvestWork,
 } from "@/models/user/workers/CultivationWork";
 import {
-  BASIC,
   STANDARD,
   VARIETIES_QUALITIES,
 } from "@/lib/constants/cultivation/plants";

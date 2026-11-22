@@ -1,5 +1,7 @@
 "use client";
 
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { preventEvent } from "@/lib/utils/dev";
 import { useEffect, useState } from "react";
 import { FaShoppingCart } from "@react-icons/all-files/fa/FaShoppingCart";
@@ -11,20 +13,22 @@ import { CustomerInfoForm } from "./checkout";
 import { sendOrder } from "@/lib/utils/webstore/orders";
 import { checkValue } from "@/lib/utils/formValidation";
 
-export const CartPageComponent = () => {
+export const CartPageComponent = ({ demoMode }) => {
+  const { data: session } = useSession();
+  const router = useRouter();
   const initialCustomer = {
-    name: "a",
-    surname: "b",
-    email: "c@c",
-    address: "d",
+    name: "",
+    surname: "",
+    address: "",
   };
   const [customerData, setCustomerData] = useState(initialCustomer);
   const [fillInfo, setFillInfo] = useState(false);
   const dispatch = useDispatch();
   const cartItems = useSelector((state) => state.webstore.cart.items);
 
-  const placeOrder = () => {
-    sendOrder({ customerData, cartItems });
+  const placeOrder = async () => {
+    const sent = await sendOrder({ customerData, cartItems });
+    if (!sent) return;
     setFillInfo(false);
     dispatch(emptyCart());
   };
@@ -45,9 +49,9 @@ export const CartPageComponent = () => {
     >
       Isprazni
     </div>,
-    <div
+    !demoMode && <div
       className="btn submitButton btnSm"
-      onClick={() => setFillInfo(true)}
+      onClick={() => session?.user ? setFillInfo(true) : router.push("/prijava")}
       key="naruči"
     >
       Naruči
@@ -62,7 +66,7 @@ export const CartPageComponent = () => {
             <FaShoppingCart />
           </div>
         }
-        customButtons={cartActionButtons}
+        customButtons={cartActionButtons.filter(Boolean)}
       >
         {cartItems?.map((cartItem, index) => {
           return (
@@ -74,11 +78,11 @@ export const CartPageComponent = () => {
           );
         })}
       </List>
-      {fillInfo && (
+      {!demoMode && session?.user && fillInfo && (
         <CustomerInfoForm
           isOpen={fillInfo}
           onCancel={() => setFillInfo(false)}
-          customerData={customerData}
+          customerData={{ ...customerData, email: session.user.email }}
           setCustomerData={setCustomerData}
           submitOrder={placeOrder}
         />

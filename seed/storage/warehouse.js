@@ -30,7 +30,6 @@ export const seedWarehouse = async () => {
 
 export const seedWarehouses = async (count = 5) => {
   const warehouses = [];
-  await Warehouse.deleteMany({});
   console.log(`Seeding ${count} warehouses...`);
   for (let i = 0; i < count; i++) {
     const warehouse = await seedWarehouse();

@@ -113,13 +113,12 @@ const NoFields = () => {
 function FieldItem({ field }) {
   const router = useRouter();
   const dispatch = useDispatch();
-  if (!field) return null;
   const {
     description,
-    dimensions: { width, length },
+    dimensions: { width, length } = {},
     cultivationAreas,
     slug,
-  } = field;
+  } = field ?? {};
 
   const cultivationCells = useMemo(() => {
     if (!cultivationAreas) return [];
@@ -127,7 +126,7 @@ function FieldItem({ field }) {
       utils.cultivation.cultivations.getCASCultivations(cultivationAreas);
     const plcvs = utils.cultivation.cultivations.getPlCvs(cultivations);
     return plcvs;
-  }, [field]);
+  }, [cultivationAreas]);
 
   const [plantedCells, setPlantedCells] = useState(
     cultivationAreas
@@ -135,6 +134,7 @@ function FieldItem({ field }) {
       : [],
   );
 
+  if (!field) return null;
   return (
     <>
       <div className="">

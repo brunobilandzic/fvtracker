@@ -1,4 +1,4 @@
-import dbConnect from "@/lib/db/mongooseConnect";
+import { protectApi } from "@/lib/auth/protectApi";
 import {
   CropMainType,
   CropGeneralType,
@@ -6,9 +6,8 @@ import {
   CropVariety,
 } from "@/models/sectors/cultivation/Crops";
 
-export async function POST(request) {
+async function handlePOST(request) {
   try {
-    await dbConnect();
     const body = await request.json();
     const { level } = body;
 
@@ -96,8 +95,9 @@ export async function POST(request) {
     }
 
     throw new Error("Unknown crop level: " + level);
-  } catch (error) {
-    console.error(error);
-    return Response.json({ error: error.message }, { status: 500 });
+  } catch {
+    return Response.json({ error: "Request failed" }, { status: 500 });
   }
 }
+
+export const POST = protectApi(handlePOST, ["Admin", "GeneralManager", "CultivationManager"]);

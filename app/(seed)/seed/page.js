@@ -1,8 +1,5 @@
-import SeedPageComponent from "@/components/seed";
-import React from "react";
+import { notFound } from "next/navigation";
 
-function Seed() {
-  return <SeedPageComponent />;
+export default function SeedPage() {
+  notFound();
 }
-
-export default Seed;

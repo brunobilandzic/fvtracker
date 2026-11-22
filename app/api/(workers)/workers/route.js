@@ -1,33 +1,21 @@
+import { protectApi } from "@/lib/auth/protectApi";
 import {
-  fetchManager,
-  fetchSessionRootManager,
+  getCurrentIdentity,
 } from "@/lib/auth/fetchSessionData";
-import { GENERAL_MANAGER } from "@/lib/constants/users/managerTypes";
-import dbConnect from "@/lib/db/mongooseConnect";
+import { GENERAL_MANAGER, FINANCIAL_MANAGER, MANAGER_TYPES } from "@/lib/constants/users/managerTypes";
 import { createWorker } from "@/lib/workers/create";
 import { getWorkers } from "@/lib/workers/get";
 import mongoose from "mongoose";
 
-export async function GET(req) {
+async function handleGET(req) {
   try {
-    const managerModelName = req.nextUrl.searchParams.get("managerModelName");
-    await dbConnect();
-    const { specificManager, unauthorized } = await fetchManager({
-      managerNames: [managerModelName],
-    });
-    if (unauthorized) {
-      return Response.json(
-        { error: "Nemate pravo pristupa radnicima" },
-        { status: 403 },
-      );
-    }
+    const user = await getCurrentIdentity();
     const workers = await getWorkers({
-      rootManagerId: specificManager?.rootManager._id,
-      managerModelName: managerModelName,
+      rootManagerId: user.rootManagerId,
+      managerModelName: user.managerModelName,
     });
     return Response.json({ workers });
-  } catch (error) {
-    console.error("Error fetching workers:", error);
+  } catch {
     return Response.json(
       { error: "Greška pri dohvaćanju radnika" },
       { status: 500 },
@@ -35,40 +23,30 @@ export async function GET(req) {
   }
 }
 
-export async function POST(req) {
+async function handlePOST(req) {
   try {
-    await dbConnect();
-    let { rootManager, unauthorized, generalManager, isAdmin } =
-      await fetchSessionRootManager();
-    if (unauthorized) {
-      return Response.json(
-        { error: "Nemate pravo pristupa radnicima" },
-        { status: 403 },
-      );
-    }
+    const user = await getCurrentIdentity();
     const { workerData } = await req.json();
-    if (!rootManager || generalManager) {
-      const specoficManager =
-        await mongoose.models[workerData.managerModelName].findOne();
-      rootManager = specoficManager.rootManager;
+    const sector = workerData?.managerModelName;
+    if (!MANAGER_TYPES.includes(sector) || [GENERAL_MANAGER, "Worker"].includes(sector)) {
+      return Response.json({ error: "Invalid worker sector" }, { status: 400 });
     }
-    const { specificWorker } = await createWorker({
-      rootManagerId: rootManager._id,
-      workerData,
-      isGeneralAdmin: generalManager || isAdmin,
-    });
-    console.log(
-      "Worker created successfully:",
-      specificWorker.appUser.email,
-      specificWorker.manager.managerModelName,
-      specificWorker.employmentRequest.status,
-    );
+    const isGeneralAdmin = user.isAdmin || user.managerModelName === GENERAL_MANAGER;
+    if (!isGeneralAdmin && sector !== user.managerModelName) {
+      return Response.json({ error: "Access denied" }, { status: 403 });
+    }
+    const manager = isGeneralAdmin ? await mongoose.models[sector].findOne().select("rootManager") : null;
+    const rootManagerId = isGeneralAdmin ? manager?.rootManager : user.rootManagerId;
+    if (!rootManagerId) return new Response(null, { status: 404 });
+    const { specificWorker } = await createWorker({ rootManagerId, workerData, isGeneralAdmin });
     return Response.json({ worker: specificWorker });
-  } catch (error) {
-    console.error("Worker creation error:", error);
+  } catch {
     return Response.json(
       { error: "Greška pri kreiranju radnika" },
       { status: 500 },
     );
   }
 }
+
+export const GET = protectApi(handleGET, ["Admin", "GeneralManager", "CultivationManager", "ProductionManager", "FinancialManager", "WarehouseManager"]);
+export const POST = protectApi(handlePOST, ["Admin", "GeneralManager", "CultivationManager", "ProductionManager", "FinancialManager", "WarehouseManager"]);

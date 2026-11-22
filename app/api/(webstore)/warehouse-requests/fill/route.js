@@ -1,12 +1,12 @@
+import { getAssignableWorker } from "@/lib/auth/recordScope";
+import { protectApi } from "@/lib/auth/protectApi";
 import { fetchManager, fetchManagerWorker } from "@/lib/auth/fetchSessionData";
 import { WAREHOUSE_MANAGER } from "@/lib/constants/users/managerTypes";
 import { fillWarehouseRequest } from "@/lib/warehouses/warehouseRequests";
 import { managerMorkerMap } from "@/lib/constants/users/managerWorker";
-import dbConnect from "@/lib/db/mongooseConnect";
 
-export async function POST(request) {
+async function handlePOST(request) {
   try {
-    await dbConnect();
     let {
       specificManager,
       worker: warehouseWorker,
@@ -24,17 +24,21 @@ export async function POST(request) {
     }
     const { warehouseRequestId, shipmentSources, workerId } =
       await request.json();
+    const worker = await getAssignableWorker(workerId, "WarehouseWorker");
+    if (!worker) return new Response(null, { status: 404 });
     const result = await fillWarehouseRequest({
+      workerManager: worker.manager,
       warehouseRequestId,
       shipmentSources,
       workerId,
     });
     return Response.json({ ...result });
-  } catch (error) {
-    console.error("Error filling warehouse request:", error);
+  } catch {
     return Response.json(
       { message: "Error filling warehouse request" },
       { status: 500 },
     );
   }
 }
+
+export const POST = protectApi(handlePOST, ["Admin", "GeneralManager", "WarehouseManager", "WarehouseWorker"]);

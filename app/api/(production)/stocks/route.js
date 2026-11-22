@@ -1,5 +1,6 @@
+import { getAssignableWorker } from "@/lib/auth/recordScope";
+import { protectApi } from "@/lib/auth/protectApi";
 import { createProductStock, getStocks } from "@/lib/production/stocks";
-import dbConnect from "@/lib/db/mongooseConnect";
 import { PRODUCTION_STOCK } from "@/lib/constants/production";
 import { WAREHOUSE_STOCK } from "@/lib/constants/warehouse";
 import { acceptWarehouseStock } from "@/lib/warehouses/accept";
@@ -9,9 +10,8 @@ import { fetchManagerWorker } from "@/lib/auth/fetchSessionData";
 import { PRODUCTION_MANAGER } from "@/lib/constants/users/managerTypes";
 import { managerMorkerMap } from "@/lib/constants/users/managerWorker";
 
-export async function GET(request) {
+async function handleGET(request) {
   try {
-    await dbConnect();
     const { searchParams } = new URL(request.url);
     const productId = searchParams.get("productId");
     if (!productId) {
@@ -23,10 +23,10 @@ export async function GET(request) {
         },
       );
     }
-  } catch (error) {
-    console.log("Error fetching stocks:", error);
+    return new Response(null, { status: 400 });
+  } catch {
     return Response.json(
-      { error: error.message },
+      { error: "Request failed" },
       {
         status: 500,
         headers: { "Content-Type": "application/json" },
@@ -35,10 +35,9 @@ export async function GET(request) {
   }
 }
 
-export async function POST(req) {
+async function handlePOST(req) {
   // route to add or create new stock
   try {
-    await dbConnect();
     let {
       specificManager,
       worker: productionWorker,
@@ -54,7 +53,9 @@ export async function POST(req) {
     const stockType = req.nextUrl.searchParams.get("stockType");
     let stock;
     const body = await req.json();
-    if (stockType == PRODUCTION_STOCK) {
+    if (stockType === PRODUCTION_STOCK) {
+      if (!Number.isFinite(Number(body.productionStockData?.quantity)) || Number(body.productionStockData.quantity) <= 0) return new Response(null, { status: 400 });
+      if (!await getAssignableWorker(body.productionStockData.workerId, "ProductionWorker")) return new Response(null, { status: 404 });
       const { productionStock, productionProcess } =
         await createProductionStock({
           stockData: body.productionStockData,
@@ -68,10 +69,13 @@ export async function POST(req) {
       );
     } else if (stockType == WAREHOUSE_STOCK) {
       const { warehouseStockData } = body;
+      if (!Number.isFinite(Number(warehouseStockData?.quantity)) || Number(warehouseStockData.quantity) <= 0) return new Response(null, { status: 400 });
+      if (!await getAssignableWorker(warehouseStockData.workerId, "ProductionWorker")) return new Response(null, { status: 404 });
       const product = await Product.findById(warehouseStockData.productId);
       const productionStock = await ProductionStock.findById(
         warehouseStockData.productionStockId,
       );
+      if (!productionStock || !product || !productionStock.product.equals(product._id)) return new Response(null, { status: 404 });
       if (productionStock.quantity < warehouseStockData.quantity) {
         return Response.json(
           {
@@ -100,11 +104,9 @@ export async function POST(req) {
         },
       );
     }
-  } catch (error) {
-    console.log("Error creating stock:", error);
-
+  } catch {
     return Response.json(
-      { error: error.message },
+      { error: "Request failed" },
       {
         status: 500,
         headers: { "Content-Type": "application/json" },
@@ -132,3 +134,6 @@ async function createProductionStock({ stockData }) {
   });
   return { productionStock, productionProcess };
 }
+
+export const GET = protectApi(handleGET, ["Admin", "GeneralManager", "ProductionManager", "FinancialManager", "ProductionWorker"]);
+export const POST = protectApi(handlePOST, ["Admin", "GeneralManager", "ProductionManager", "ProductionWorker"]);

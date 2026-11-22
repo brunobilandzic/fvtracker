@@ -1,50 +1,45 @@
-import { fetchSessionSpecificManager } from "@/lib/auth/fetchSessionData";
-import { CULTIVATION_MANAGER } from "@/lib/constants/users/managerTypes";
+import { getScopedArea, getScopedCultivation } from "@/lib/auth/recordScope";
+import { protectApi } from "@/lib/auth/protectApi";
 import cultivation from "@/lib/cultivation";
-import dbConnect from "@/lib/db/mongooseConnect";
 
-export async function POST(request) {
+async function handlePOST(request) {
   try {
-    await dbConnect();
-    await fetchSessionSpecificManager({ managerName: CULTIVATION_MANAGER });
     const body = await request.json();
-    if (!body?.data)
-      throw new Error("Missing cultivation details in request body");
+    if (!await getScopedArea(body.data?.cultivationAreaId)) return new Response(null, { status: 404 });
     const newCultivation = await cultivation.cultivations.create(body.data);
 
     return Response.json({ newCultivation }, { status: 200 });
-  } catch (error) {
-    console.error(error);
-    return Response.json({ error: error.message }, { status: 500 });
+  } catch {
+    return Response.json({ error: "Request failed" }, { status: 500 });
   }
 }
 
-export async function PUT(request) {
+async function handlePUT(request) {
   try {
-    await dbConnect();
-    await fetchSessionSpecificManager({ managerName: CULTIVATION_MANAGER });
     const body = await request.json();
+    if (!await getScopedCultivation(body._id)) return new Response(null, { status: 404 });
     const updatedCultivation = await cultivation.cultivations.update(body);
     return Response.json({ updatedCultivation }, { status: 200 });
-  } catch (error) {
-    console.error(error);
-    return Response.json({ error: error.message }, { status: 500 });
+  } catch {
+    return Response.json({ error: "Request failed" }, { status: 500 });
   }
 }
 
-export async function DELETE(request) {
+async function handleDELETE(request) {
   try {
-    await dbConnect();
-    await fetchSessionSpecificManager({ managerName: CULTIVATION_MANAGER });
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
+    if (!await getScopedCultivation(id)) return new Response(null, { status: 404 });
     const deleted = await cultivation.cultivations.delete(id);
     if (!deleted) {
       return Response.json({ error: "Not found" }, { status: 404 });
     }
     return Response.json({ success: true }, { status: 200 });
-  } catch (error) {
-    console.error(error);
-    return Response.json({ error: error.message }, { status: 500 });
+  } catch {
+    return Response.json({ error: "Request failed" }, { status: 500 });
   }
 }
+
+export const POST = protectApi(handlePOST, ["Admin", "GeneralManager", "CultivationManager"]);
+export const PUT = protectApi(handlePUT, ["Admin", "GeneralManager", "CultivationManager"]);
+export const DELETE = protectApi(handleDELETE, ["Admin", "GeneralManager", "CultivationManager"]);

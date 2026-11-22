@@ -8,7 +8,6 @@ import {
   optimizedParamsArray,
 } from "../../../data/fields.js";
 import dbConnect from "@/lib/db/mongooseConnect.js";
-import { deleteFieldsWithDocs } from "@/lib/db/delete.js";
 import { randomPoint, notValidPoint } from "./generateCell.js";
 import { CropVariety } from "@/models/sectors/cultivation/Crops.js";
 import { CultivationArea } from "@/models/sectors/cultivation/Cultivation.js";
@@ -16,7 +15,6 @@ import { createCultivation } from "../../cultivation/index.js";
 import {} from "../../crops/crops.js";
 import crops from "../../crops/index.js";
 
-await dbConnect();
 
 async function createFieldObject(fieldParams, msWindow = createFieldTimeMs) {
   const msStart = Date.now();
@@ -78,7 +76,6 @@ async function createFieldsObjects(
   fieldParamsArray = optimizedParamsArray,
   msWindow = createFieldTimeMs,
 ) {
-  /*   await deleteFieldsWithDocs(); */
   console.log(`Creating ${fieldParamsArray.length} fields...`);
   const fieldObjects = [];
   const fieldPromises = [];
@@ -100,7 +97,6 @@ export async function createFields(
   fieldParamsArray = optimizedParamsArray,
   msWindow = createFieldTimeMs,
 ) {
-  await deleteFieldsWithDocs();
   const fieldObjects = await createFieldsObjects(fieldParamsArray, msWindow);
 
   const fieldRecords = [];

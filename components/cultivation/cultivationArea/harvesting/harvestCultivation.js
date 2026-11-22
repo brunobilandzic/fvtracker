@@ -19,6 +19,7 @@ export const HarvestCultivation = ({
   chooseWorker,
   chooseQuality,
 }) => {
+  const workersRedux = useSelector((state) => state.workers.items);
   if (
     !newHarvest ||
     !newHarvest.cropVariety ||
@@ -32,7 +33,6 @@ export const HarvestCultivation = ({
   const cropVarietyName = newHarvest.cropVariety.name;
   const quantityString =
     quantityToHarvest === 1 ? "1 ćelije" : `${quantityToHarvest} ćelija`;
-  const workersRedux = useSelector((state) => state.workers.items);
   const workers = workersRedux.filter(
     (worker) => worker.employmentRequest.status === EMPLOYMENT_STATUS_EMPLOYED,
   );

@@ -1,6 +1,5 @@
-import { fetchManager } from "@/lib/auth/fetchSessionData";
-import dbConnect from "@/lib/db/mongooseConnect";
-import { MANAGER_TYPES } from "@/lib/constants/users/managerTypes";
+import { protectApi } from "@/lib/auth/protectApi";
+import { getCurrentIdentity } from "@/lib/auth/fetchSessionData";
 import { Worker } from "@/models/user/workers";
 import basePopulate, {
   cultivationPopulate,
@@ -15,24 +14,20 @@ import {
   WAREHOUSE_MANAGER,
 } from "@/lib/constants/users/managerTypes";
 
-export async function POST(req) {
+async function handlePOST(req) {
   try {
-    await dbConnect();
-    const { specificManager, gerneralManager, unauthorized } =
-      await fetchManager({ managerNames: MANAGER_TYPES });
+    const user = await getCurrentIdentity();
     const { workerId, amount } = await req.json();
-
-    if (unauthorized || (!specificManager && !gerneralManager)) {
-      return Response.json(
-        { message: "Nemate pravo isplatiti radnika" },
-        { status: 403 },
-      );
+    if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) {
+      return Response.json({ error: "Invalid payment amount" }, { status: 400 });
     }
-    const worker = await Worker.findByIdAndUpdate(
-      workerId,
+    const payroll = user.isAdmin || ["FinancialManager", "GeneralManager"].includes(user.managerModelName);
+    const worker = await Worker.findOneAndUpdate(
+      { _id: workerId, ...(!payroll && { manager: user.rootManagerId }) },
       { $inc: { payedAmount: amount } },
       { new: true },
     );
+    if (!worker) return new Response(null, { status: 404 });
     await worker.populate(basePopulate);
     let populate;
     switch (worker.manager.managerModelName) {
@@ -59,11 +54,12 @@ export async function POST(req) {
       { message: `Radnik ${workerId} isplaćen za iznos ${amount}.`, worker },
       { status: 200 },
     );
-  } catch (error) {
-    console.error("Error processing payment request:", error);
+  } catch {
     return Response.json(
       { message: "Došlo je do greške pri obradi zahtjeva za isplatu." },
       { status: 500 },
     );
   }
 }
+
+export const POST = protectApi(handlePOST, ["Admin", "GeneralManager", "CultivationManager", "ProductionManager", "FinancialManager", "WarehouseManager"]);

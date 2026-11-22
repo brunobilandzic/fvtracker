@@ -58,15 +58,6 @@ export function CultivationAreaPageComponent({ fieldSlug, caSlug }) {
     return plcvs;
   }, [cultivationArea, selectField, fields]);
 
-  useEffect(() => {
-    if (cultivationArea?._id) {
-      setNewCUDetails((prev) => ({
-        ...prev,
-        cultivationAreaId: cultivationArea._id,
-      }));
-    }
-  }, [cultivationArea]);
-
   const initialNewCUDetails = {
     cultivationAreaId: cultivationArea?._id || null,
     existingCulName: null,
@@ -80,6 +71,15 @@ export function CultivationAreaPageComponent({ fieldSlug, caSlug }) {
   };
 
   const [newCUDetails, setNewCUDetails] = useState(initialNewCUDetails);
+
+  useEffect(() => {
+    if (cultivationArea?._id) {
+      setNewCUDetails((prev) => ({
+        ...prev,
+        cultivationAreaId: cultivationArea._id,
+      }));
+    }
+  }, [cultivationArea]);
 
   useEffect(() => {
     const fillSelectedField = async () => {

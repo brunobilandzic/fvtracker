@@ -83,10 +83,8 @@ const ingredientsSchema = new Schema({
 
 productSchema.pre("findOneAndUpdate", function () {
   const update = this.getUpdate();
-  console.log("Pre-update hook triggered with update:", update);
   if (update.name) {
     update.slug = makeUrlFriendly(update.name);
-    console.log("Updated slug to:", update.slug);
   }
 });
 

@@ -17,15 +17,6 @@ import { ProductionProcess } from "@/models/sectors/production/Process";
 import { getEmployedWorker } from "@/lib/workers/get";
 
 export const createProducts = async () => {
-  await Product.deleteMany({}); // Clear existing products
-  await Warehouse.deleteMany({});
-  await ProductionStock.deleteMany({});
-  await ProductionProcess.deleteMany({});
-  await WarehouseAcceptanceProcess.deleteMany({});
-  await ProductionWorker.updateMany(
-    {},
-    { $set: { productionProcesses: [], warehouseAcceptanceProcesses: [] } },
-  );
   console.log("Creating products...");
   const productionFacility = await createFacility();
   const productionManager = await ProductionManager.findOne();

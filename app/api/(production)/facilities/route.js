@@ -1,9 +1,9 @@
+import { protectApi } from "@/lib/auth/protectApi";
 import { fetchManager, fetchManagerWorker } from "@/lib/auth/fetchSessionData";
 import {
   FINANCIAL_MANAGER,
   PRODUCTION_MANAGER,
 } from "@/lib/constants/users/managerTypes";
-import dbConnect from "@/lib/db/mongooseConnect";
 import { getFacilities } from "@/lib/production/facilities/get";
 import { createFacility } from "@/lib/production/facilities/create";
 import { updateFacility } from "@/lib/production/facilities/update";
@@ -11,9 +11,8 @@ import { deleteFacilities } from "@/lib/production/facilities/delete";
 import { makeUrlFriendly } from "@/lib/utils/strings";
 import { managerMorkerMap } from "@/lib/constants/users/managerWorker";
 
-export const GET = async (req) => {
+const handleGET = async (req) => {
   try {
-    await dbConnect();
     let {
       specificManager,
       worker: productionWorker,
@@ -29,8 +28,7 @@ export const GET = async (req) => {
     const facilities = await getFacilities({});
 
     return Response.json({ facilities }, { status: 200 });
-  } catch (error) {
-    console.error("Greška pri dohvaćanju postrojenja:", error);
+  } catch {
     return Response.json(
       { error: "Greška pri dohvaćanju postrojenja" },
       { status: 500 },
@@ -38,20 +36,18 @@ export const GET = async (req) => {
   }
 };
 
-export const POST = async (req) => {
+const handlePOST = async (req) => {
   try {
-    await dbConnect();
     const { unauthorized } = await fetchManager({
       managerNames: [PRODUCTION_MANAGER],
     });
     if (unauthorized) {
       return Response.json({ unauthorized: true }, { status: 403 });
     }
-    const body = await req.json();
-    const facility = await createFacility(body);
+    const { name, description, volume } = await req.json();
+    const facility = await createFacility({ name, description, volume });
     return Response.json({ facility }, { status: 201 });
-  } catch (error) {
-    console.error("Greška pri kreiranju postrojenja:", error);
+  } catch {
     return Response.json(
       { error: "Greška pri kreiranju postrojenja" },
       { status: 500 },
@@ -59,9 +55,8 @@ export const POST = async (req) => {
   }
 };
 
-export const PUT = async (req) => {
+const handlePUT = async (req) => {
   try {
-    await dbConnect();
     const { unauthorized } = await fetchManager({
       managerNames: [PRODUCTION_MANAGER],
     });
@@ -69,14 +64,13 @@ export const PUT = async (req) => {
       return Response.json({ unauthorized: true }, { status: 403 });
     }
     const id = req.nextUrl.searchParams.get("id");
-    const body = await req.json();
+    const { name, description, volume } = await req.json();
     const facility = await updateFacility({
       facilityId: id,
-      data: { ...body, slug: makeUrlFriendly(body.name) },
+      data: { name, description, volume, slug: makeUrlFriendly(name) },
     });
     return Response.json({ facility }, { status: 200 });
-  } catch (error) {
-    console.error("Greška pri ažuriranju postrojenja:", error);
+  } catch {
     return Response.json(
       { error: "Greška pri ažuriranju postrojenja" },
       { status: 500 },
@@ -84,9 +78,8 @@ export const PUT = async (req) => {
   }
 };
 
-export const DELETE = async (req) => {
+const handleDELETE = async (req) => {
   try {
-    await dbConnect();
     const { unauthorized } = await fetchManager({
       managerNames: [PRODUCTION_MANAGER],
     });
@@ -97,11 +90,15 @@ export const DELETE = async (req) => {
     const facilityIds = idsString.split(",");
     await deleteFacilities({ facilityIds });
     return Response.json({ success: true }, { status: 200 });
-  } catch (error) {
-    console.error("Greška pri brisanju postrojenja:", error);
+  } catch {
     return Response.json(
       { error: "Greška pri brisanju postrojenja" },
       { status: 500 },
     );
   }
 };
+
+export const GET = protectApi(handleGET, ["Admin", "GeneralManager", "ProductionManager", "FinancialManager", "ProductionWorker"]);
+export const POST = protectApi(handlePOST, ["Admin", "GeneralManager", "ProductionManager"]);
+export const PUT = protectApi(handlePUT, ["Admin", "GeneralManager", "ProductionManager"]);
+export const DELETE = protectApi(handleDELETE, ["Admin", "GeneralManager", "ProductionManager"]);

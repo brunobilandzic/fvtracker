@@ -1,5 +1,7 @@
+import { getCurrentIdentity } from "@/lib/auth/fetchSessionData";
+import { getAssignableWorker } from "@/lib/auth/recordScope";
+import { protectApi } from "@/lib/auth/protectApi";
 import { fetchManager, fetchManagerWorker } from "@/lib/auth/fetchSessionData";
-import dbConnect from "@/lib/db/mongooseConnect";
 import {
   FINANCIAL_MANAGER,
   WAREHOUSE_MANAGER,
@@ -12,12 +14,11 @@ import {
 import { FinancialManager } from "@/models/user/managers/FinancialManager";
 import { WarehouseManager } from "@/models/user/managers/WarehouseManager";
 
-export async function GET(request) {
+async function handleGET(request) {
   try {
-    await dbConnect();
     let { specificManager, worker, unauthorized } = await fetchManagerWorker({
       managerNames: [WAREHOUSE_MANAGER, FINANCIAL_MANAGER],
-      workerType: managerMorkerMap[WAREHOUSE_MANAGER],
+      workerType: (await getCurrentIdentity()).workerType,
     });
 
     if (unauthorized) {
@@ -27,18 +28,18 @@ export async function GET(request) {
       );
     }
 
-    let { financialManagerId, warehouseManagerId } = await extractManagerIds(
-      specificManager,
-      worker,
-    );
+    const { financialManagerId, warehouseManagerId } = await extractManagerIds(specificManager, worker);
 
+    const user = await getCurrentIdentity();
+    if (!user.isAdmin && user.managerModelName !== "GeneralManager" && !financialManagerId && !warehouseManagerId) {
+      return Response.json({ warehouseRequests: [] });
+    }
     const warehouseRequests = await getWarehouseRequests({
       financialManagerId,
       warehouseManagerId,
     });
     return Response.json({ warehouseRequests });
-  } catch (error) {
-    console.error("Error fetching warehouse requests:", error);
+  } catch {
     return new Response(
       JSON.stringify({
         message: "Greška prilikom dohvaćanja zahtjeva skladištu.",
@@ -73,9 +74,8 @@ async function extractManagerIds(specificManager, worker) {
   return { financialManagerId, warehouseManagerId };
 }
 
-export async function POST(request) {
+async function handlePOST(request) {
   try {
-    await dbConnect();
     let {
       specificManager: financialManager,
       worker,
@@ -96,17 +96,23 @@ export async function POST(request) {
       financialManager,
       worker,
     );
-    requestData["financialManager"] = financialManagerId;
+    const assignee = await getAssignableWorker(requestData.workerId, "FinancialWorker");
+    if (!assignee) return new Response(null, { status: 404 });
+    const managerId = financialManagerId || (await FinancialManager.findOne({ rootManager: assignee.manager }).select("_id"))?._id;
+    if (!managerId) return new Response(null, { status: 404 });
+    requestData.financialManager = managerId;
     const warehouseRequest = await createWarehouseRequest(requestData);
     return Response.json({
       warehouseRequest,
       message: "Zahtjev uspješno poslan skladištu.",
     });
-  } catch (error) {
-    console.error("Error creating warehouse request:", error);
+  } catch {
     return Response.json(
       { message: "Greška prilikom izrade zahtjeva skladištu." },
       { status: 500 },
     );
   }
 }
+
+export const GET = protectApi(handleGET, ["Admin", "GeneralManager", "WarehouseManager", "FinancialManager", "WarehouseWorker", "FinancialWorker"]);
+export const POST = protectApi(handlePOST, ["Admin", "GeneralManager", "FinancialManager", "FinancialWorker"]);

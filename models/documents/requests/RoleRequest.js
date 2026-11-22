@@ -1,4 +1,4 @@
-const { Schema } = require("mongoose");
+import { Schema } from "mongoose";
 import { ROLE_STATUSES } from "@/lib/constants/users";
 import mongoose from "mongoose";
 

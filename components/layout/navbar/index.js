@@ -19,7 +19,6 @@ import {
 } from "@/lib/constants/users/managerTypes";
 import fillProductionRedux from "@/lib/utils/production";
 import { fillWarehouseRedux } from "@/lib/utils/storage";
-import { refreshProducts } from "@/lib/utils/production/products";
 import { refreshProductsThunk } from "@/store/webstore";
 import { fillCartRedux } from "@/lib/utils/webstore/cart";
 import { fillOrdersRedux } from "@/lib/utils/webstore/orders";
@@ -32,7 +31,6 @@ import {
 } from "@/store/workers";
 import { fetchProcurments } from "@/store/procurments";
 import { MdVpnKey } from "@react-icons/all-files/md/MdVpnKey";
-import { FaDatabase } from "@react-icons/all-files/fa/FaDatabase";
 import { LogoutSolid, UserSolid } from "@mynaui/icons-react";
 
 export default {
@@ -42,8 +40,6 @@ export default {
 export function Navbar() {
   const { data: session, status } = useSession();
   const authenticated = status === "authenticated";
-  const isAdmin = authenticated && session.user?.isAdmin; // for db icon
-  const router = useRouter();
   return (
     <div className="z-[200] navbar relative h-16 bg-[var(--navbar-bg)] flex items-center px-10 text-[var(--text-navbar)]">
       <div className="flex-1 flex justify-start items-center">
@@ -54,11 +50,6 @@ export function Navbar() {
         <NavItems />
       </div>
       <div className=" flex-1 flex justify-end items-center gap-8 ">
-        {true && (
-          <Link href="/seed">
-            <FaDatabase />
-          </Link>
-        )}
         {authenticated ? (
           <>
             <div
@@ -172,7 +163,7 @@ function NavItems() {
         console.log(
           "refreshing orders and requests data for financial/general/warehouse manager...",
         );
-        fillOrdersRedux({ dispatch, router });
+        if (managerModelName !== WAREHOUSE_MANAGER) fillOrdersRedux({ dispatch, router });
         fillWarehouseRequestsRedux({ dispatch });
       }
       if (managerModelName === FINANCIAL_MANAGER) {
@@ -184,7 +175,6 @@ function NavItems() {
       }
     } else if (status === "unauthenticated") {
       console.log("user is unauthenticated, refreshing products...");
-      refreshProducts({ dispatch, router });
       fillCartRedux({ dispatch, cartItems });
       setItems(guestNavItems);
     }

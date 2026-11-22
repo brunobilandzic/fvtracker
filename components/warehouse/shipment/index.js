@@ -19,16 +19,16 @@ import { translateShipmentStatus } from "@/lib/utils/strings";
 import { financialPayWorker } from "@/store/workers";
 
 function ShipmentPageComponent({ shipment }) {
-  if (!shipment) {
-    return notFound();
-  }
-
   const dispatch = useDispatch();
   const router = useRouter();
 
   const managerModelName = useSelector(
     (state) => state.user?.session?.managerModelName,
   );
+
+  if (!shipment) {
+    return notFound();
+  }
 
   const { warehouseRequest, status, shipmentItems } = shipment;
   const { order } = warehouseRequest || {};
@@ -108,7 +108,8 @@ const ShipmentItem = ({
   workerId,
   workerType,
 }) => {
-  const { sources, receipt, createdAt, _id } = shipmentItem;
+  const { sources, createdAt, _id } = shipmentItem;
+  const [receipt, setReceipt] = useState(shipmentItem.receipt);
   const [makeReceiptOpen, setMakeReceiptOpen] = useState(false);
   const [worker, setWorker] = useState(workerId);
   const handleReceiptCreation = async () => {
@@ -118,8 +119,7 @@ const ShipmentItem = ({
         shipmentItemId: _id,
         workerId: worker,
       });
-      shipmentItem.receipt = res.data.newReceipt; // Assuming the response contains the new receipt ID
-      console.log("Receipt created successfully:", res.data.newReceipt);
+      setReceipt(res.data.newReceipt);
       dispatch(
         financialPayWorker({ workerId: worker, receipt: res.data.newReceipt }),
       );

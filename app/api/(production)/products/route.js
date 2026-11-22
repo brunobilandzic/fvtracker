@@ -1,6 +1,6 @@
+import { protectApi } from "@/lib/auth/protectApi";
 import { fetchManager } from "@/lib/auth/fetchSessionData";
 import { PRODUCTION_MANAGER } from "@/lib/constants/users/managerTypes";
-import dbConnect from "@/lib/db/mongooseConnect";
 import {
   createProduct,
   deleteProducts,
@@ -8,14 +8,17 @@ import {
   updateProduct,
 } from "@/lib/production/product";
 
-export const GET = async (req) => {
+const handleGET = async (req) => {
   try {
-    await dbConnect();
     const products = await getProducts();
 
-    return Response.json({ products }, { status: 200 });
-  } catch (error) {
-    console.error("Error fetching managers:", error);
+    return Response.json({ products: products.map(({ _id, name, slug, description, price, ingredients }) => ({
+      _id, name, slug, description, price,
+      ingredients: ingredients.map(({ cropVariety }) => ({
+        cropVariety: cropVariety ? { name: cropVariety.name } : null,
+      })),
+    })) });
+  } catch {
     return Response.json(
       { error: "Failed to fetch managers" },
       { status: 500 },
@@ -23,9 +26,8 @@ export const GET = async (req) => {
   }
 };
 
-export const PUT = async (req) => {
+const handlePUT = async (req) => {
   try {
-    await dbConnect();
     const id = req.nextUrl.searchParams.get("id");
     const body = await req.json();
     const product = await updateProduct({
@@ -33,8 +35,7 @@ export const PUT = async (req) => {
       productId: id,
     });
     return Response.json({ product }, { status: 200 });
-  } catch (error) {
-    console.error("Error updating product:", error);
+  } catch {
     return Response.json(
       { error: "Failed to update product" },
       { status: 500 },
@@ -42,17 +43,15 @@ export const PUT = async (req) => {
   }
 };
 
-export const POST = async (req) => {
+const handlePOST = async (req) => {
   try {
-    await dbConnect();
     const body = await req.json();
     const product = await createProduct({
       _newProductData: body,
     });
 
     return Response.json({ product }, { status: 201 });
-  } catch (error) {
-    console.error("Error creating product:", error);
+  } catch {
     return Response.json(
       { error: "Failed to create product" },
       { status: 500 },
@@ -60,19 +59,29 @@ export const POST = async (req) => {
   }
 };
 
-export const DELETE = async (req) => {
+const handleDELETE = async (req) => {
   try {
-    await dbConnect();
     const idsString = req.nextUrl.searchParams.get("ids");
     const productIds = idsString.split(",");
     const product = await deleteProducts({ productIds });
 
     return Response.json({ product }, { status: 200 });
-  } catch (error) {
-    console.error("Error deleting product:", error);
+  } catch {
     return Response.json(
       { error: "Failed to delete product" },
       { status: 500 },
     );
   }
 };
+
+const publicCatalog = protectApi(handleGET, "public");
+const productionCatalog = protectApi(async () => Response.json({ products: await getProducts() }),
+  ["Admin", "GeneralManager", "ProductionManager", "ProductionWorker", "FinancialManager"]);
+
+export const GET = (request, context) =>
+  request.nextUrl.searchParams.get("scope") === "production"
+    ? productionCatalog(request, context)
+    : publicCatalog(request, context);
+export const POST = protectApi(handlePOST, ["Admin", "GeneralManager", "ProductionManager"]);
+export const PUT = protectApi(handlePUT, ["Admin", "GeneralManager", "ProductionManager"]);
+export const DELETE = protectApi(handleDELETE, ["Admin", "GeneralManager", "ProductionManager"]);

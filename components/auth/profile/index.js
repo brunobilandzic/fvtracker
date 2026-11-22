@@ -17,6 +17,12 @@ const ProfileComponent = () => {
 
   const { workerType } = session?.user || {};
 
+  useEffect(() => {
+    if (status !== "loading" && !session?.user) {
+      router.push("/uloga-nije-odobrena");
+    }
+  }, [status, router, session?.user]);
+
   if (status === "loading") {
     return (
       <div>
@@ -25,11 +31,7 @@ const ProfileComponent = () => {
     );
   }
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/uloga-nije-odobrena");
-    }
-  }, [status, router]);
+  if (!session?.user) return null;
   return (
     <div>
       <CommonProfilePage {...session.user} />

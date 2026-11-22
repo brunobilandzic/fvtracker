@@ -1,9 +1,10 @@
-import dbConnect from "@/lib/db/mongooseConnect";
+import { protectApi } from "@/lib/auth/protectApi";
 
-export async function GET(req) {
-  await dbConnect();
+async function handleGET(req) {
   return new Response(JSON.stringify({ message: "User route GET" }), {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });
 }
+
+export const GET = protectApi(handleGET);

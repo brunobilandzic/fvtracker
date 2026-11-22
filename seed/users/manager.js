@@ -1,3 +1,4 @@
+import { SEED_ERROR } from "@/lib/constants/errors/db/seed";
 import { RootManager } from "@/models/user/managers/RootManager.js";
 import dbConnect from "@/lib/db/mongooseConnect";
 import mongoose from "mongoose";

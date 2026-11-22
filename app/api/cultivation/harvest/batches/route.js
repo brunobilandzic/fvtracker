@@ -1,3 +1,4 @@
+import { protectApi } from "@/lib/auth/protectApi";
 import { fetchManager } from "@/lib/auth/fetchSessionData";
 import {
   CULTIVATION_MANAGER,
@@ -7,31 +8,30 @@ import {
   getHarvestingBatches,
   populateBatches,
 } from "@/lib/cultivation/harvest/batches";
-import dbConnect from "@/lib/db/mongooseConnect";
 import { HarvestingBatch } from "@/models/sectors/interface/HarvestingBatch";
 
-export async function GET(req) {
+async function handleGET(req) {
   try {
-    await dbConnect();
-    const { specificManager, generalManager } = await fetchManager({
+    const { specificManager, generalManager, isAdmin } = await fetchManager({
       managerNames: [CULTIVATION_MANAGER, PRODUCTION_MANAGER],
     });
 
-    if (generalManager) {
+    if (generalManager || isAdmin) {
       let harvestingBatches = await HarvestingBatch.find();
       harvestingBatches = await populateBatches({ harvestingBatches });
       return Response.json({ harvestingBatches }, { status: 200 });
     }
     // manager of intest is first in array
     const harvestingBatches = await getHarvestingBatches({
-      managerName: specificManager.managerModelName,
+      managerName: specificManager.rootManager.managerModelName,
     });
     return Response.json({ harvestingBatches }, { status: 200 });
-  } catch (error) {
-    console.error("Error fetching harvesting batches:", error);
+  } catch {
     return Response.json(
       { error: "Failed to fetch harvesting batches" },
       { status: 500 },
     );
   }
 }
+
+export const GET = protectApi(handleGET, ["Admin", "GeneralManager", "CultivationManager", "ProductionManager"]);

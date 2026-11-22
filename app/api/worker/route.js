@@ -1,4 +1,5 @@
-import dbConnect from "@/lib/db/mongooseConnect";
+import { getCurrentIdentity } from "@/lib/auth/fetchSessionData";
+import { protectApi } from "@/lib/auth/protectApi";
 import populateCommon, {
   cultivationPopulate,
   productionPopulate,
@@ -7,14 +8,20 @@ import populateCommon, {
 } from "@/lib/workers/populate";
 import { Worker } from "@/models/user/workers";
 
-export async function GET(request) {
-  console.log("worker route called..")
+async function handleGET(request) {
+
   try {
     const { searchParams } = new URL(request.url);
     const workerId = searchParams.get("workerId");
-    await dbConnect();
 
-    const worker = await Worker.findById(workerId).populate(populateCommon);
+    const user = await getCurrentIdentity();
+    const payroll = user.isAdmin || ["FinancialManager", "GeneralManager"].includes(user.managerModelName);
+    const filter = { _id: workerId };
+    if (!payroll) {
+      if (user.workerId) filter.appUser = user.appUserId;
+      else filter.manager = user.rootManagerId;
+    }
+    const worker = await Worker.findOne(filter).populate(populateCommon);
 
     if (!worker) {
       return Response.json(
@@ -38,8 +45,9 @@ export async function GET(request) {
         break;
     }
     return Response.json({ worker });
-  } catch (error) {
-    console.error(error);
-    return Response.json({ error: error.message }, { status: 500 });
+  } catch {
+    return Response.json({ error: "Request failed" }, { status: 500 });
   }
 }
+
+export const GET = protectApi(handleGET, ["Admin", "GeneralManager", "CultivationManager", "ProductionManager", "FinancialManager", "WarehouseManager", "CultivationWorker", "ProductionWorker", "WarehouseWorker", "FinancialWorker"]);

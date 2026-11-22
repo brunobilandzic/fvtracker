@@ -1,81 +1,75 @@
-import dbConnect from "@/lib/db/mongooseConnect";
+import { getScopedField, getScopedArea } from "@/lib/auth/recordScope";
+import { protectApi } from "@/lib/auth/protectApi";
 import cultivation from "@/lib/cultivation";
-import { fetchSessionSpecificManager } from "@/lib/auth/fetchSessionData";
-import { CULTIVATION_MANAGER } from "@/lib/constants/users/managerTypes";
 
-export async function GET(request) {
+async function handleGET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-    await dbConnect();
-    await fetchSessionSpecificManager({ managerName: CULTIVATION_MANAGER });
-    if (id) {
-      const cultivationArea = await cultivation.cultivationArea.get(id);
-      return Response.json({ cultivationArea }, { status: 200 });
-    }
-    if (!id) {
-      throw new Error("ID is required");
-    }
-  } catch (error) {
-    console.error(error);
-    return Response.json({ error: error.message }, { status: 500 });
+    const cultivationArea = await getScopedArea(id);
+    if (!cultivationArea) return new Response(null, { status: 404 });
+    return Response.json({ cultivationArea });
+  } catch {
+    return Response.json({ error: "Request failed" }, { status: 500 });
   }
 }
 
-export async function POST(request) {
+async function handlePOST(request) {
   try {
-    await dbConnect();
     const body = await request.json();
 
+    if (!body.field || !await getScopedField({ _id: body.field })) return new Response(null, { status: 404 });
     const newCultivationArea = await cultivation.cultivationArea.create(body);
     return Response.json({ newCultivationArea }, { status: 201 });
-  } catch (error) {
-    console.error(error);
+  } catch {
     return Response.json(
       {
-        error: error.message,
+        error: "Request failed",
       },
       { status: 500 },
     );
   }
 }
 
-export async function PUT(request) {
+async function handlePUT(request) {
   try {
-    await dbConnect();
     const body = await request.json();
+    if (!await getScopedArea(body.id)) return new Response(null, { status: 404 });
     const updated = await cultivation.cultivationArea.update(body);
 
     return Response.json({ updatedCultivationArea: updated }, { status: 200 });
-  } catch (error) {
-    console.error(error);
+  } catch {
     return Response.json(
       {
-        error: error.message,
+        error: "Request failed",
       },
       { status: 500 },
     );
   }
 }
 
-export async function DELETE(request) {
+async function handleDELETE(request) {
   try {
-    await dbConnect();
 
     const body = await request.json();
     const { id } = body;
+    if (!await getScopedArea(id)) return new Response(null, { status: 404 });
     const deleted = await cultivation.cultivationArea.delete(id);
     if (!deleted) {
       return Response.json({ error: "Not found" }, { status: 404 });
     }
     return Response.json({ success: true }, { status: 200 });
-  } catch (error) {
-    console.error(error);
+  } catch {
     return Response.json(
       {
-        error: error.message,
+        error: "Request failed",
       },
       { status: 500 },
     );
   }
 }
+
+export const GET = protectApi(handleGET, ["Admin", "GeneralManager", "CultivationManager", "CultivationWorker"]);
+export const POST = protectApi(handlePOST, ["Admin", "GeneralManager", "CultivationManager"]);
+export const PUT = protectApi(handlePUT, ["Admin", "GeneralManager", "CultivationManager"]);
+export const DELETE = protectApi(handleDELETE, ["Admin", "GeneralManager", "CultivationManager"]);
