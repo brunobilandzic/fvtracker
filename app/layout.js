@@ -21,7 +21,7 @@ export default function RootLayout({ children }) {
           <Navbar />
           {isDemoMode() && (
             <p role="status" className="w-full px-4 py-2 text-center text-sm">
-              Demonstracijski podaci. Promjene su onemogu?ene.
+              Demonstracijski podaci. Promjene su onemogućene.
             </p>
           )}
           <div className="w-full max-w-6xl mx-auto px-4 py-10">
