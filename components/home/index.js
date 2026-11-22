@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import ProfileComponent from "@/components/auth/profile";
 import Link from "next/link";
-import { FiShield } from "react-icons/fi";
+import { FiMonitor, FiShield } from "react-icons/fi";
 import DemoRoleCards from "./demoRoleCards";
 
 export default function Home({ demoRoles }) {
@@ -24,6 +24,14 @@ export default function Home({ demoRoles }) {
             <p className="mt-1.5 text-sm leading-relaxed text-gray-600">
               Interaktivna demonstracija diplomskog rada.
             </p>
+            {demo && (
+              <p className="mt-3 flex max-w-lg items-start gap-2 text-sm leading-relaxed text-gray-600">
+                <FiMonitor aria-hidden="true" size={16} className="mt-0.5 shrink-0 text-green-800" />
+                <span>
+                  Za pregled poslovnih modula preporučujemo računalo. Fokus diplomskog rada je razvoj poslovne logike ERP sustava.
+                </span>
+              </p>
+            )}
           </div>
           {demo && (
             <p className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-2 py-1.5 text-xs font-medium leading-snug text-green-800 sm:gap-2 sm:px-3">

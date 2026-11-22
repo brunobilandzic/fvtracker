@@ -213,6 +213,7 @@ const realDemo = { skip: mocked ? "requires a server-validated session" : false 
 test("One-click demo cards fit mobile and reject an unavailable selection", async () => {
   await checkPage({ mobile: true }, async page => {
     await page.goto("/");
+    await page.getByText(/Za pregled poslovnih modula preporu\u010dujemo ra\u010dunalo/).waitFor();
     const section = page.getByRole("region", { name: "Odaberite ulogu za pregled" });
     await section.waitFor();
     assert.equal(await section.getByRole("button", { name: /^Isprobaj/ }).count(), 4);
