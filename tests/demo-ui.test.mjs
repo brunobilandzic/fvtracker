@@ -318,6 +318,10 @@ for (const [role, account, dashboard, identityKey, identityValue] of [
       if (identityKey === "workerType") assert.equal(user.employed, true);
       assert.equal(user.isAdmin, false);
       await page.getByRole("button", { name: "Odjava" }).first().waitFor();
+      if (["production", "financial", "production-worker"].includes(role)) {
+        const production = await page.request.get("/api/productionManager");
+        assert.equal(production.status(), 200, "Production data should load for this role");
+      }
     });
   });
 }

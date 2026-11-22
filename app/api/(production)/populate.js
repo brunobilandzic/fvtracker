@@ -1,3 +1,5 @@
+import { ShipmentSource } from "@/models/sectors/sales/Shipment";
+
 export const populateProductsConfig = {
   path: "products",
   populate: [
@@ -34,6 +36,7 @@ export const populateProductsConfig = {
     },
     {
       path: "shipmentSources",
+      model: ShipmentSource,
     },
   ],
 };

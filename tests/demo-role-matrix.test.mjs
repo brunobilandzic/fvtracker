@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
@@ -10,6 +11,18 @@ assert(baseURL && new URL(baseURL).hostname === "127.0.0.1", "Use the local read
 
 const mocked = process.env.FVTRACKER_TEST_MOCK === "true";
 const needsDatabase = { skip: mocked ? "requires a read-only demo database" : false };
+
+test("Production manager route registers the shipment source model in isolation", () => {
+  // A Vercel function cannot rely on another route to register its populate models.
+  execFileSync(process.execPath, [
+    "--import", "./scripts/register-imports.mjs",
+    "--input-type=module", "--eval",
+    `import assert from "node:assert/strict";
+    import mongoose from "mongoose";
+    await import("./app/api/(production)/productionManager/route.js");
+    assert.ok(mongoose.models.ShipmentSource);`,
+  ]);
+});
 
 const activeRoles = [
   ["gm", "GeneralManager", "/api/general-manager", "/api/genman-requests"],
