@@ -6,9 +6,9 @@ import store from "@/store";
 import { DemoActionProvider } from "@/components/layout/demoActions";
 import CustomProviders from "@/lib/providers/custom";
 
-export default function Providers({ children, demoMode }) {
+export default function Providers({ children, demoMode, session }) {
   return (
-    <SessionProvider>
+    <SessionProvider session={session}>
       <ReduxProvider store={store}>
         <DemoActionProvider demoMode={demoMode}>
           <CustomProviders>{children}</CustomProviders>

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test, { after, before } from "node:test";
+import { readFile } from "node:fs/promises";
 import { chromium } from "playwright-core";
 import { signIn } from "./demo-session.mjs";
 import api, { interceptDemoWrites, isDemoWriteBlocked } from "../lib/api.js";
@@ -14,12 +15,6 @@ const fixture = {
   "/api/products": { products: [] },
   "/api/workers": { workers: [] },
   "/api/procurments": { procurments: [] },
-  "/api/cultivation/fields": { fields: [{
-    _id: "sample-field", name: "Demo test field", slug: "demo-test-field",
-    dimensions: { width: 5, length: 5 }, cultivationAreas: [],
-    plantingPlans: [{ _id: "sample-planting", name: "Sample planting plan", items: [] }],
-    harvestingPlans: [{ _id: "sample-harvest", name: "Sample harvesting plan", items: [] }],
-  }] },
   "/api/harvesting-batches": { harvestingBatches: [] },
   "/api/facilities": { facilities: [{
     _id: "sample-facility", name: "Sample facility", slug: "sample-facility",
@@ -68,15 +63,12 @@ async function checkPage({ account, mobile = false } = {}, run) {
     });
     await page.route("**/api/**", async route => {
       const request = route.request();
-      if (!readMethods.has(request.method())) {
+      const path = new URL(request.url()).pathname;
+      if (!readMethods.has(request.method()) && !path.startsWith("/api/auth/")) {
         writes.push(request.method());
         await route.abort();
       } else if (mocked) {
-        const path = new URL(request.url()).pathname;
-        const session = account === "cm" ? {
-          user: { username: "cm", managerModelName: "CultivationManager", roleStatus: "ODOBRENO" },
-        } : null;
-        await route.fulfill({ json: path === "/api/auth/session" ? session : fixture[path] ?? null });
+        await route.fulfill({ json: fixture[path] ?? null });
       } else {
         await route.continue();
       }
@@ -151,7 +143,7 @@ const forms = [
   ["/nabava/izradi", "Spremi nabavku", "fm"],
 ];
 for (const [path, label, account] of forms) {
-  test(`Form ${path} shows read-only feedback`, async () => {
+  test(`Form ${path} shows read-only feedback`, { skip: mocked && path === "/upravljanje-poljima/dodavanje" ? "requires a server-validated session" : false }, async () => {
     await checkPage({ account }, async (page) => {
       await page.goto(path);
       await page.getByRole("button", { name: label, exact: true }).click();
@@ -161,16 +153,12 @@ for (const [path, label, account] of forms) {
   });
 }
 
-test("saving a planting plan shows read-only feedback", async () => {
+test("saving a planting plan shows read-only feedback", { skip: mocked ? "requires a server-validated session" : false }, async () => {
   await checkPage({ account: "cm" }, async (page) => {
     await page.goto("/plan-sadnje/izradi");
-    if (mocked) {
-      await page.getByText("Demo test field", { exact: true }).click();
-    } else {
-      const fields = await (await page.request.get("/api/cultivation/fields")).json();
-      assert(typeof fields.fields?.[0]?.name === "string", "The demo requires a seeded field");
-      await page.getByText(fields.fields[0].name, { exact: true }).first().click();
-    }
+    const { fields } = await (await page.request.get("/api/cultivation/fields")).json();
+    assert(typeof fields?.[0]?.name === "string", "The demo requires a seeded field");
+    await page.getByText(fields[0].name, { exact: true }).first().click();
     await page.getByRole("button", { name: "Spremi plan sadnje", exact: true }).click();
     await seeToast(page);
   });
@@ -187,7 +175,7 @@ const rolePages = [
   ["/radnici/zaposljavanje", "fm", ["Odobri", "Odbij"]],
 ];
 for (const [path, account, labels] of rolePages) {
-  test(`Role controls at ${path}`, { skip: mocked && account !== "cm" ? "requires an authenticated read-only demo" : false }, async () => {
+  test(`Role controls at ${path}`, { skip: mocked ? "requires an authenticated read-only demo" : false }, async () => {
     await checkPage({ account }, async (page) => {
       for (const label of labels) {
         await page.goto(path);
@@ -219,6 +207,145 @@ test("Order deletion shows read-only feedback when a pending order exists",
       await seeToast(page);
     });
   });
+
+const realDemo = { skip: mocked ? "requires a server-validated session" : false };
+
+function fullScreenLoader(page) {
+  return page.getByRole("status", { name: "U\u010ditavanje sadr\u017eaja" });
+}
+
+function sessionRequests(page) {
+  let count = 0;
+  page.on("request", request => {
+    if (new URL(request.url()).pathname === "/api/auth/session") count++;
+  });
+  return () => count;
+}
+
+async function withSlowScripts(page, run) {
+  let release;
+  const pending = new Promise(resolve => { release = resolve; });
+  await page.route(/\/_next\/static\/.*\.js(?:\?|$)/, async route => {
+    await pending;
+    await route.continue();
+  });
+  try {
+    await run();
+  } finally {
+    release();
+  }
+  await page.waitForLoadState("load");
+}
+
+test("Homepage for visitors renders before JavaScript and refreshes without requesting a session", async () => {
+  await checkPage({}, async page => {
+    const requests = sessionRequests(page);
+    let catalogRequests = 0;
+    page.on("request", request => {
+      if (new URL(request.url()).pathname === "/api/products") catalogRequests++;
+    });
+    await withSlowScripts(page, async () => {
+      await page.goto("/", { waitUntil: "commit" });
+      await page.getByRole("heading", { name: "Dobrodo\u0161li u FvTracker" }).waitFor();
+      await page.getByRole("link", { name: "Pregledaj proizvode" }).waitFor();
+      assert.equal(await fullScreenLoader(page).count(), 0);
+      assert.equal(await page.getByText(/Korisni\u010dko ime:/).count(), 0);
+    });
+    await page.reload();
+    await page.getByRole("heading", { name: "Dobrodo\u0161li u FvTracker" }).waitFor();
+    assert.equal(requests(), 0);
+    assert.equal(catalogRequests, 0, "The homepage only needs the catalog link");
+
+    const catalog = page.waitForResponse(response => new URL(response.url()).pathname === "/api/products");
+    await page.getByRole("link", { name: "Pregledaj proizvode" }).click();
+    assert.equal((await catalog).status(), 200);
+  });
+});
+
+test("Homepage for signed-in users renders a private profile before JavaScript and after refresh", realDemo, async () => {
+  await checkPage({ account: "wm" }, async page => {
+    const requests = sessionRequests(page);
+    const profile = page.getByText("Korisni\u010dko ime: wm", { exact: true });
+    await withSlowScripts(page, async () => {
+      await page.goto("/", { waitUntil: "commit" });
+      await profile.waitFor();
+      assert.equal(await page.getByRole("heading", { name: "Dobrodo\u0161li u FvTracker" }).count(), 0);
+      assert.equal(await fullScreenLoader(page).count(), 0);
+    });
+
+    await page.reload();
+    await profile.waitFor();
+    await page.waitForLoadState("networkidle");
+    assert.equal(new URL(page.url()).pathname, "/");
+    assert.equal(await fullScreenLoader(page).count(), 0);
+    assert.equal(requests(), 0);
+  });
+});
+
+test("Homepage keeps the worker profile visible while work details load", realDemo, async () => {
+  await checkPage({ account: "cwe" }, async page => {
+    let release;
+    const pending = new Promise(resolve => { release = resolve; });
+    await page.route("**/api/worker?*", async route => {
+      await pending;
+      await route.fallback();
+    });
+    try {
+      await page.goto("/");
+      await page.getByText("Korisni\u010dko ime: cwe", { exact: true }).waitFor();
+      await page.getByText("U\u010ditavanje podataka o radu", { exact: true }).waitFor({ state: "attached" });
+      assert.equal(await fullScreenLoader(page).count(), 0);
+    } finally {
+      release();
+    }
+    await page.getByText("Podaci o radu", { exact: true }).waitFor();
+    assert.equal(await page.getByText("U\u010ditavanje podataka o radu", { exact: true }).count(), 0);
+  });
+});
+
+test("Login and logout update the homepage without a fullscreen loader or redirect loop", realDemo, async () => {
+  const file = process.env.FVTRACKER_TEST_CREDENTIALS ?? ".demo-credentials.json";
+  const accounts = JSON.parse(await readFile(file, "utf8"));
+  const password = accounts.find(account => account.username === "pm")?.password;
+  assert(password, "The demo needs a production manager account");
+
+  await checkPage({}, async page => {
+    const requests = sessionRequests(page);
+    await page.goto("/prijava");
+    assert.equal(requests(), 0);
+    await page.locator('input[name="login"]').fill("pm");
+    try {
+      await page.locator('input[name="password"]').fill(password);
+    } catch {
+      throw new Error("Could not enter the demo credential");
+    }
+    await page.getByRole("button", { name: "Prijava", exact: true }).click();
+    await page.waitForURL(url => url.pathname === "/");
+    await page.getByText("Korisni\u010dko ime: pm", { exact: true }).waitFor();
+    assert.equal(requests(), 1, "Only the login session refresh is expected");
+    assert.equal(await fullScreenLoader(page).count(), 0);
+
+    await page.getByRole("button", { name: "Odjava" }).click();
+    await page.waitForURL(url => url.pathname === "/autorizacija");
+    await page.goto("/");
+    await page.getByRole("heading", { name: "Dobrodo\u0161li u FvTracker" }).waitFor();
+    assert.equal(await page.getByText("Korisni\u010dko ime: pm", { exact: true }).count(), 0);
+    assert.equal(await fullScreenLoader(page).count(), 0);
+  });
+});
+
+test("Warehouse requests load with scoped shipment data and without loading all orders", realDemo, async () => {
+  await checkPage({ account: "wm" }, async page => {
+    let orderRequests = 0;
+    page.on("request", request => {
+      if (new URL(request.url()).pathname === "/api/orders") orderRequests++;
+    });
+    await page.goto("/skladiste-zahtjevi");
+    await page.getByRole("heading", { name: /Zahtjev za narud\u017ebom/ }).first().waitFor();
+    assert.equal(new URL(page.url()).pathname, "/skladiste-zahtjevi");
+    assert.equal(orderRequests, 0);
+  });
+});
 
 test("Axios intercepts JSON and multipart writes before transport and leaves reads working", async () => {
   const attempted = [];

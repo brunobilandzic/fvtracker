@@ -1,50 +1,31 @@
 "use client";
 
-import { LoadingFullScreen } from "@/components/layout/loading";
-import { ROLE_STATUSES } from "@/lib/constants/users";
 import { MANAGER_TRANSLATION } from "@/lib/constants/users/managerTypes";
 import { WORKER_TRANSLATION } from "@/lib/constants/users/workers";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { WorkerProfile } from "./workers";
 
-const ProfileComponent = () => {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+export default function ProfileComponent({ user }) {
   const worker = useSelector((state) => state.workers.worker);
+  const isLoading = useSelector((state) => state.workers.isLoading);
+  const currentWorker = worker?._id && worker._id === user.workerId ? worker : null;
 
-  const { workerType } = session?.user || {};
-
-  useEffect(() => {
-    if (status !== "loading" && !session?.user) {
-      router.push("/uloga-nije-odobrena");
-    }
-  }, [status, router, session?.user]);
-
-  if (status === "loading") {
-    return (
-      <div>
-        <LoadingFullScreen />
-      </div>
-    );
-  }
-
-  if (!session?.user) return null;
   return (
     <div>
-      <CommonProfilePage {...session.user} />
-      {workerType && worker && (
-        <>
-          <WorkerProfile worker={worker} workerType={workerType} />
-        </>
+      <CommonProfilePage {...user} />
+      {user.employed && currentWorker && (
+        <WorkerProfile worker={currentWorker} workerType={user.workerType} />
+      )}
+      {user.employed && isLoading && !currentWorker && (
+        <div role="status" className="mt-4 max-w-sm space-y-2 motion-safe:animate-pulse">
+          <span className="sr-only">Učitavanje podataka o radu</span>
+          <div aria-hidden="true" className="h-4 w-1/2 rounded bg-gray-200" />
+          <div aria-hidden="true" className="h-3 w-3/4 rounded bg-gray-200" />
+        </div>
       )}
     </div>
   );
-};
-
-export default ProfileComponent;
+}
 
 const CommonProfilePage = ({
   email,

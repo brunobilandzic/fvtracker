@@ -20,7 +20,6 @@ import {
 } from "@/lib/constants/users/managerTypes";
 import fillProductionRedux from "@/lib/utils/production";
 import { fillWarehouseRedux } from "@/lib/utils/storage";
-import { refreshProductsThunk } from "@/store/webstore";
 import { fillCartRedux } from "@/lib/utils/webstore/cart";
 import { fillOrdersRedux } from "@/lib/utils/webstore/orders";
 import { fillWarehouseRequestsRedux } from "@/lib/utils/documents/requests";
@@ -40,7 +39,7 @@ export default {
 
 export function Navbar() {
   const { data: session, status } = useSession();
-  const authenticated = status === "authenticated";
+  const authenticated = Boolean(session?.user);
   return (
     <div className="z-[200] navbar relative h-16 bg-[var(--navbar-bg)] flex items-center px-10 text-[var(--text-navbar)]">
       <div className="flex-1 flex justify-start items-center">
@@ -52,22 +51,18 @@ export function Navbar() {
       </div>
       <div className=" flex-1 flex justify-end items-center gap-8 ">
         {authenticated ? (
-          <>
-            <div
-              className="cursor-pointer"
-              onClick={() => {
-                signOut({ callbackUrl: "/autorizacija" });
-              }}
-            >
-              <LogoutSolid />
-            </div>
-          </>
-        ) : (
-          <>
-            <Link href="/autorizacija">
-              <MdVpnKey className="text-xl -mt-0.5" />
-            </Link>
-          </>
+          <button
+            type="button"
+            aria-label="Odjava"
+            className="cursor-pointer"
+            onClick={() => signOut({ redirectTo: "/autorizacija" })}
+          >
+            <LogoutSolid />
+          </button>
+        ) : status !== "loading" && (
+          <Link href="/autorizacija" aria-label="Prijava">
+            <MdVpnKey className="text-xl -mt-0.5" />
+          </Link>
         )}
       </div>
     </div>
@@ -82,10 +77,24 @@ function NavLogo() {
   );
 }
 
+function canShowManagerLinks(user) {
+  return Boolean(user?.managerModelName &&
+    (!user.roleStatus || user.roleStatus === ROLE_STATUSES.APPROVED) &&
+    (user.managerModelName !== GENERAL_MANAGER ||
+      user.generalManagerRequest === ROLE_STATUSES.APPROVED));
+}
+
+function getNavItems(user, status) {
+  if (status === "loading") return [];
+  if (!user) return guestNavItems;
+  if (user.isAdmin) return adminNavItems;
+  if (user.workerType) return user.employed ? roleitems[user.workerType] || [] : [];
+  return canShowManagerLinks(user) ? roleitems[user.managerModelName] || [] : [];
+}
+
 function NavItems() {
   const { data: session, status } = useSession();
-  const [managerModelName, setManagerModelName] = useState(null);
-  const [items, setItems] = useState([]);
+  const items = getNavItems(session?.user, status);
   const dispatch = useDispatch();
   const router = useRouter();
   const generalManagerRedux = useSelector(
@@ -95,26 +104,9 @@ function NavItems() {
   const cartItems = useSelector((state) => state.webstore.cart.items);
 
   useEffect(() => {
-    dispatch(refreshProductsThunk());
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (status === "authenticated" && session.user?.managerModelName) {
-      if (
-        session.user.managerModelName === GENERAL_MANAGER &&
-        session.user.generalManagerRequest !== ROLE_STATUSES.APPROVED
-      ) {
-        return;
-      }
-      if (
-        session.user.roleStatus &&
-        session.user.roleStatus !== ROLE_STATUSES.APPROVED
-      ) {
-        return;
-      }
+    if (status === "authenticated" && canShowManagerLinks(session?.user)) {
       dispatch(fetchWorkers(session.user.managerModelName));
       const managerModelName = session.user.managerModelName;
-      setManagerModelName(session.user?.managerModelName);
       dispatch(login(session.user));
       dispatch(fetchProcurments());
       if (
@@ -154,17 +146,16 @@ function NavItems() {
         console.log(
           "warehouse manager logged in, refreshing warehouse data...",
         );
-        fillWarehouseRedux({ dispatch, router });
+        fillWarehouseRedux({ dispatch });
       }
       if (
         managerModelName === FINANCIAL_MANAGER ||
-        managerModelName === GENERAL_MANAGER ||
-        managerModelName === WAREHOUSE_MANAGER
+        managerModelName === GENERAL_MANAGER
       ) {
         console.log(
           "refreshing orders and requests data for financial/general/warehouse manager...",
         );
-        if (managerModelName !== WAREHOUSE_MANAGER) fillOrdersRedux({ dispatch, router });
+        fillOrdersRedux({ dispatch, router });
         fillWarehouseRequestsRedux({ dispatch });
       }
       if (managerModelName === FINANCIAL_MANAGER) {
@@ -177,21 +168,13 @@ function NavItems() {
     } else if (status === "unauthenticated") {
       console.log("user is unauthenticated, refreshing products...");
       fillCartRedux({ dispatch, cartItems });
-      setItems(guestNavItems);
     }
   }, [status]);
-
-  useEffect(() => {
-    if (managerModelName) {
-      setItems(roleitems[managerModelName] || []);
-    }
-  }, [managerModelName]);
 
   useEffect(() => {
     if (status === "authenticated" && session.user?.isAdmin) {
       refreshGeneralManager({ dispatch });
       dispatch(login(session.user));
-      setItems(adminNavItems);
       dispatch(fetchWorkers());
       fillOrdersRedux({ dispatch, router });
       fillWarehouseRequestsRedux({ dispatch });
@@ -209,15 +192,13 @@ function NavItems() {
         console.log("User is not employed, skipping worker data refresh");
         return;
       }
-      setItems(roleitems[session.user.workerType] || []);
       if (session.user.workerType === "ProductionWorker") {
         console.log("Production worker logged in, refreshing product data...");
         fillProductionRedux({ dispatch, router });
       }
       if (session.user.workerType === "WarehouseWorker") {
         console.log("Warehouse worker logged in, refreshing warehouse data...");
-        fillWarehouseRedux({ dispatch, router });
-        fillWarehouseRequestsRedux({ dispatch });
+        fillWarehouseRedux({ dispatch });
       }
       if (session.user.workerType === "FinancialWorker") {
         console.log(

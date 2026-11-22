@@ -1,3 +1,4 @@
+import { cache } from "react";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { handleCredentials, getSessionIdentity } from "@/lib/auth/handlers";
@@ -39,4 +40,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
   },
+});
+
+// Share the validated identity within one server render.
+export const getServerSession = cache(async () => {
+  const session = await auth();
+  return session?.user?.appUserId ? { user: session.user, expires: session.expires } : null;
 });

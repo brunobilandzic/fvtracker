@@ -5,23 +5,19 @@ import styles from "@/components/form/form.module.css";
 import { AppInput } from "@/components/form/inputs";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Loading } from "@/components/layout/loading";
 
 function LoginForm({ allowRegistration }) {
-  const { status } = useSession();
+  const { data: session } = useSession();
   const [loginData, setLoginData] = useState({});
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "authenticated") {
+    if (session?.user) {
       router.replace("/");
     }
-  }, [status, router]);
-
-  if (status === "loading") {
-    return <Loading />;
-  }
+  }, [session?.user, router]);
 
   const onChange = (e) => {
     const { name, value } = e.target;
@@ -30,24 +26,25 @@ function LoginForm({ allowRegistration }) {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
     setError("");
-
-    const res = await signIn("credentials", {
-      login: loginData.login,
-      password: loginData.password,
-      redirect: false,
-    });
-
-    if (!res?.ok || res.error) {
+    setSubmitting(true);
+    try {
+      const res = await signIn("credentials", {
+        login: loginData.login,
+        password: loginData.password,
+        redirect: false,
+      });
+      if (!res?.ok || res.error) setError("Prijava nije uspjela.");
+    } catch {
       setError("Prijava nije uspjela.");
-      return;
+    } finally {
+      setSubmitting(false);
     }
-
-    window.location.href = "/";
   };
 
   return (
-    <div className={`form`}>
+    <form className="form" onSubmit={onSubmit} aria-busy={submitting}>
       <div className={styles.head}>
         <h2 className={styles.heading}>Prijava</h2>
       </div>
@@ -74,9 +71,9 @@ function LoginForm({ allowRegistration }) {
         })}
       </div>
       <div className={` flex gap-2 justify-center`}>
-        <div className={`btn submitButton`} onClick={onSubmit}>
-          Prijava
-        </div>
+        <button type="submit" className="btn submitButton" disabled={submitting}>
+          {submitting ? "Prijava u tijeku…" : "Prijava"}
+        </button>
         {allowRegistration && <div
           className={`btn btnSecondary`}
           onClick={() => router.push("/registracija")}
@@ -84,7 +81,7 @@ function LoginForm({ allowRegistration }) {
           Registracija
         </div>}
       </div>
-    </div>
+    </form>
   );
 }
 

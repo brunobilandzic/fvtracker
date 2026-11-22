@@ -2,6 +2,7 @@
 
 import { useDispatch, useSelector } from "react-redux";
 import { warehouseRequestItems } from "@/lib/utils/documents/requests";
+import { shipmentSourcesTotals } from "@/lib/utils/storage/warehouse";
 import { List, ListItem } from "../../layout/preview/list";
 import { WAREHOUSE_MANAGER } from "@/lib/constants/users/managerTypes";
 import { CreateShipmentModal } from "../shipment/create";
@@ -64,12 +65,14 @@ const WarehouseRequestListItem = ({ request, router }) => {
   }
 
   const managerModelName = useSelector(
-    (state) => state.user.session.managerModelName,
+    (state) => state.user.session?.managerModelName,
   );
-  const workerType = useSelector((state) => state.user.session.workerType);
-  const order = useSelector((state) =>
-    state.webstore.orders.items.find((o) => o._id === request.order._id),
-  );
+  const workerType = useSelector((state) => state.user.session?.workerType);
+  const shippedQuantities = shipmentSourcesTotals({
+    shipmentSources: (request.shipment?.shipmentItems ?? [])
+      .flatMap(item => item.sources ?? [])
+      .filter(source => source?.product?.name),
+  });
 
   const [createShipmentModalOpen, setCreateShipmentModalOpen] = useState(false);
 
@@ -104,7 +107,7 @@ const WarehouseRequestListItem = ({ request, router }) => {
           <div>
             <ItemList
               items={warehouseRequestItems(request)}
-              orderItems={order?.items || []}
+              shippedQuantities={shippedQuantities}
               request={request}
             />
           </div>
@@ -143,7 +146,7 @@ const WarehouseRequestListItem = ({ request, router }) => {
           warehouseRequestId={request._id}
           shipmentItems={warehouseRequestItems(request)}
           oldShipment={request.shipment}
-          order={order}
+          shippedQuantities={shippedQuantities}
           router={router}
         />
       )}
@@ -151,7 +154,7 @@ const WarehouseRequestListItem = ({ request, router }) => {
   );
 };
 
-const ItemList = ({ items, orderItems, request }) => {
+const ItemList = ({ items, shippedQuantities, request }) => {
   const { createdAt, updatedAt } = request;
   return (
     <>
@@ -164,28 +167,10 @@ const ItemList = ({ items, orderItems, request }) => {
         rows={items.map((item) => ({
           product: item.product,
           quantity: item.quantity,
-          shipped: getShippedQuantity({
-            productName: item.product,
-            orderItems,
-          }),
+          shipped: shippedQuantities[item.product] ?? 0,
         }))}
         emptyRowsLabel="Nema proizvoda"
       />
     </>
   );
-};
-
-const getShippedQuantity = ({ productName, orderItems }) => {
-  const a = orderItems
-    .filter((oi) => oi.product?.name === productName)
-    .reduce((acc, oi) => {
-      acc +=
-        oi.shipmentSources?.reduce((sAcc, ss) => {
-          sAcc += Number(ss.quantity);
-          return sAcc;
-        }, 0) ?? 0;
-      return acc;
-    }, 0);
-
-  return a;
 };

@@ -1,17 +1,12 @@
 "use client";
 
-import { LoadingFullScreen } from "@/components/layout/loading";
 import { useSession } from "next-auth/react";
 import ProfileComponent from "@/components/auth/profile";
 import Link from "next/link";
 
 export default function Home() {
-  const { data: session, status } = useSession();
-  if (status === "loading") {
-    return <LoadingFullScreen />;
-  }
-
-  if (status == "authenticated") return <ProfileComponent />;
+  const { data: session } = useSession();
+  if (session?.user) return <ProfileComponent user={session.user} />;
 
   return (
     <div className="max-w-2xl mx-auto text-center py-16">

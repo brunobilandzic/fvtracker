@@ -1,3 +1,4 @@
+import { getServerSession } from "@/auth";
 import { isDemoMode } from "@/lib/demoMode";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
@@ -11,14 +12,15 @@ export const metadata = {
   description: "Aplikacija za praćenje poljoprivredne proizvodnje",
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const session = await getServerSession();
   const demoMode = isDemoMode();
   return (
     <html lang="hr" suppressHydrationWarning={true}>
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} antialiased pb-6`}
       >
-        <Providers demoMode={demoMode}>
+        <Providers demoMode={demoMode} session={session}>
           <Navbar />
           {demoMode && (
             <p role="status" className="w-full px-4 py-2 text-center text-sm">

@@ -25,7 +25,7 @@ export const CreateShipmentModal = ({
   warehouseRequestId,
   shipmentItems,
   oldShipment,
-  order,
+  shippedQuantities,
   router,
 }) => {
   const workers = useSelector((state) => state.workers.items);
@@ -87,7 +87,7 @@ export const CreateShipmentModal = ({
         warehouses={warehouses}
         productQuantities={productQuantities}
         shipmentItems={shipmentItems}
-        order={order}
+        shippedQuantities={shippedQuantities}
         shipmentStatus={oldShipment?.status}
       />
     </FormModal>
@@ -100,13 +100,13 @@ const ChooseWarehouseSources = ({
   setNewShipmentData,
   warehouses,
   productQuantities,
-  order,
+  shippedQuantities,
   shipmentStatus,
 }) => {
   const neededQuantities = calculateNeededQuantities({
     shipmentItems,
     newShipmentData,
-    order,
+    shippedQuantities,
   });
 
   const isFullfilled = isRequestFulfilled({
