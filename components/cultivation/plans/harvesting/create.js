@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { DemoActionLink } from "@/components/layout/demoActions";
 import {
   FillPlanInfo,
   SelectField,
@@ -31,9 +31,7 @@ export default function CreateHarvestingPlanPageComponent() {
 export const CreateHarvestingPlanLink = ({}) => {
   return (
     <>
-      <Link href={"/plan-berbe/izradi"}>
-        <div className="btn">Izradi plan berbe</div>
-      </Link>
+      <DemoActionLink href={"/plan-berbe/izradi"} className="btn">Izradi plan berbe</DemoActionLink>
     </>
   );
 };

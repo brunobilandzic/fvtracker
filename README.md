@@ -73,3 +73,10 @@ Generate `AUTH_SECRET` privately with `node -e "process.stdout.write(require('no
 ## Verification
 
 Run `npm run lint`, `npm run build`, and `npm audit`. To run the integration suite, point `FVTRACKER_TEST_ORIGIN` at a running, seeded local demo and run `npm run test:demo`. The suite reads `.demo-credentials.json` by default. You can override the path with `FVTRACKER_TEST_CREDENTIALS` and set `FVTRACKER_TEST_LOG` to a captured server log to check for credential exposure. The tests cover session cookies, login and logout, unauthenticated access, role boundaries, worker record scope, read-only behavior, blocked registration and maintenance, and redacted responses.
+
+### Automated demo checks
+
+1. Build with `DEMO_MODE=true` and run `npm run lint`. Install a Chromium browser for Playwright. The test runner tries Chrome, Edge, then Playwright Chromium. You can set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to select a local executable.
+2. Save `DEMO_MODE=true`, the dedicated `DEMO_DB_NAME`, and the read-only runtime `MONGODB_URI` in the ignored file `.env.demo-test`. Keep the seeded account credentials in the ignored `.demo-credentials.json`.
+3. Run `npm run test:demo:e2e`. The runner checks the database marker and effective read-only permissions before starting a loopback-only Next.js server. It checks role access, discovers business write routes, runs browser toast tests, and compares a document fingerprint across demo collections before and after the run. The database user must be able to list and read those collections. To prevent unrelated demo traffic from affecting the comparison, use a dedicated seeded demo database.
+4. Run `npm run test:demo:ui` for a local Playwright check with fixtures. This command uses an unreachable database target and skips checks that need real accounts or stored data.

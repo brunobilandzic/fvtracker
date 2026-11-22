@@ -25,30 +25,35 @@ export default function CAOptions({
     },
     {
       label: cultivation.names.CULTIVATE_CELLS,
+      mutatesData: true,
       onClick: onCultivate,
       icon: <MdViewColumn />,
       disabled: disabled?.includes(cultivation.names.CULTIVATE_CELLS),
     },
     {
       label: cultivation.names.EDIT_INFO,
+      mutatesData: true,
       onClick: onEdit, // TODO
       icon: <MdInfoOutline />,
       disabled: disabled?.includes(cultivation.names.EDIT_INFO),
     },
     {
       label: cultivation.names.MANAGE_SEEDING,
+      mutatesData: true,
       onClick: onPlant,
       icon: <MdWidgets />,
       disabled: disabled?.includes(cultivation.names.MANAGE_SEEDING),
     },
     {
       label: cultivation.names.HARVEST_CELLS,
+      mutatesData: true,
       onClick: onHarvest,
       icon: <MdRestaurant />,
       disabled: disabled?.includes(cultivation.names.HARVEST_CELLS),
     },
     {
       label: cultivation.names.DELETE_CULTIVATION,
+      mutatesData: true,
       onClick: onDelete,
       icon: <MdDeleteForever />,
       disabled: disabled?.includes(cultivation.names.DELETE_CULTIVATION),

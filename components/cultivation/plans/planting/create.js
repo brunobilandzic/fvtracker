@@ -3,7 +3,7 @@
 import { AppDatePicker, AppInput, AppSelect } from "@/components/form/inputs";
 import api from "@/lib/api";
 import { createHarvestingPlan, createPlantingPlan } from "@/store/cultivation";
-import Link from "next/link";
+import { DemoActionLink, DemoActionButton } from "@/components/layout/demoActions";
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { FieldGrid } from "@/components/cultivation/fields/preview/grid";
@@ -43,9 +43,7 @@ export default function CreatePlantingPlanPageComonent() {
 export const CreatePlantagePlan = ({}) => {
   return (
     <>
-      <Link href={"/plan-sadnje/izradi"}>
-        <div className="btn">Izradi plan sadnje</div>
-      </Link>
+      <DemoActionLink href={"/plan-sadnje/izradi"} className="btn">Izradi plan sadnje</DemoActionLink>
     </>
   );
 };
@@ -240,9 +238,9 @@ export const FillPlanInfo = ({
               plant ? [QuantityInput, HarvestDateInput] : [QuantityInput]
             }
           />
-          <div className="btn self-start submitButton" onClick={handleSubmit}>
+          <DemoActionButton className="btn self-start submitButton" onClick={handleSubmit}>
             Spremi plan {plant ? "sadnje" : "berbe"}
-          </div>
+          </DemoActionButton>
         </div>
       </div>
     </>

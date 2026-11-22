@@ -1,3 +1,4 @@
+import { DemoActionButton } from "@/components/layout/demoActions";
 import Modal from "./modal";
 
 export function MenuModal({
@@ -17,13 +18,14 @@ export function MenuModal({
     >
       <div className="flex flex-col gap-4">
         {options.map((option, index) => (
-          <div
+          <DemoActionButton
             key={index}
+            mutatesData={option.mutatesData === true}
             onClick={option.onClick}
             className={option.className ? option.className : "btn w-full"}
           >
             {option.label}
-          </div>
+          </DemoActionButton>
         ))}
       </div>
     </Modal>

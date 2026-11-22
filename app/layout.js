@@ -12,14 +12,15 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  const demoMode = isDemoMode();
   return (
     <html lang="hr" suppressHydrationWarning={true}>
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} antialiased pb-6`}
       >
-        <Providers>
+        <Providers demoMode={demoMode}>
           <Navbar />
-          {isDemoMode() && (
+          {demoMode && (
             <p role="status" className="w-full px-4 py-2 text-center text-sm">
               Demonstracijski podaci. Promjene su onemogućene.
             </p>

@@ -1,5 +1,7 @@
 "use client";
 
+import { DemoActionButton } from "@/components/layout/demoActions";
+
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { preventEvent } from "@/lib/utils/dev";
@@ -49,13 +51,13 @@ export const CartPageComponent = ({ demoMode }) => {
     >
       Isprazni
     </div>,
-    !demoMode && <div
+    <DemoActionButton
       className="btn submitButton btnSm"
       onClick={() => session?.user ? setFillInfo(true) : router.push("/prijava")}
       key="naruči"
     >
       Naruči
-    </div>,
+    </DemoActionButton>,
   ];
   return (
     <>
@@ -66,7 +68,7 @@ export const CartPageComponent = ({ demoMode }) => {
             <FaShoppingCart />
           </div>
         }
-        customButtons={cartActionButtons.filter(Boolean)}
+        customButtons={cartActionButtons}
       >
         {cartItems?.map((cartItem, index) => {
           return (

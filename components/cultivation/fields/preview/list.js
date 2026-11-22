@@ -1,5 +1,7 @@
 "use client";
 
+import { DemoActionButton } from "@/components/layout/demoActions";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { List, ListItem } from "@/components/layout/preview/list";
@@ -99,12 +101,12 @@ const NoFields = () => {
           {" "}
           Početkom dodajte polje kako biste mogli pratiti svoje usjeve!{" "}
         </span>
-        <span
+        <DemoActionButton
           className="ml-2 btn submitButton btnSm "
           onClick={() => router.push("/upravljanje-poljima/dodavanje")}
         >
           Dodaj polje
-        </span>
+        </DemoActionButton>
       </div>
     </div>
   );

@@ -1,5 +1,7 @@
 "use client";
 
+import { DemoActionButton } from "@/components/layout/demoActions";
+
 import { useEffect, useState } from "react";
 import { AppInput } from "../form/inputs";
 import { useSelector, useDispatch } from "react-redux";
@@ -173,9 +175,9 @@ export const CreateProcurment = () => {
           ))}
         </div>
       </div>
-      <div onClick={handleSubmit} className="btn submitButton mt-6">
+      <DemoActionButton onClick={handleSubmit} className="btn submitButton mt-6">
         Spremi nabavku
-      </div>
+      </DemoActionButton>
     </div>
   );
 };

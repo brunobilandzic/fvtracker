@@ -34,7 +34,7 @@ export default {
       label: "upravljanje poljima",
       submenu: [
         { label: "pregled", path: "/upravljanje-poljima/pregled" },
-        { label: "dodavanje", path: "/upravljanje-poljima/dodavanje" },
+        { label: "dodavanje", mutatesData: true, path: "/upravljanje-poljima/dodavanje" },
         { label: "žetve", path: "/upravljanje-poljima/pregled/zetve" },
       ],
     },
@@ -42,7 +42,7 @@ export default {
       label: "kulture",
       submenu: [
         { label: "pregled", path: "/kulture" },
-        { label: "dodavanje", path: "/kulture/dodavanje" },
+        { label: "dodavanje", mutatesData: true, path: "/kulture/dodavanje" },
       ],
     },
     {

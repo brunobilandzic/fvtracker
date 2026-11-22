@@ -3,13 +3,16 @@
 import { SessionProvider } from "next-auth/react";
 import { Provider as ReduxProvider } from "react-redux";
 import store from "@/store";
-import CustomProviders, { LoadingProvider } from "@/lib/providers/custom";
+import { DemoActionProvider } from "@/components/layout/demoActions";
+import CustomProviders from "@/lib/providers/custom";
 
-export default function Providers({ children }) {
+export default function Providers({ children, demoMode }) {
   return (
     <SessionProvider>
       <ReduxProvider store={store}>
-        <CustomProviders>{children}</CustomProviders>
+        <DemoActionProvider demoMode={demoMode}>
+          <CustomProviders>{children}</CustomProviders>
+        </DemoActionProvider>
       </ReduxProvider>
     </SessionProvider>
   );

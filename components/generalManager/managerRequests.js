@@ -1,5 +1,7 @@
 "use client";
 
+import { DemoActionButton } from "@/components/layout/demoActions";
+
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
 import api from "@/lib/api";
@@ -157,24 +159,24 @@ const RespondMenu = ({ roleRequest, setRespondMenuOpen, generalManager }) => {
       >
         Odustani
       </button>
-      <button
+      <DemoActionButton
         className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
         onClick={() => onRespond(ROLE_STATUSES.APPROVED)}
       >
         Odobri
-      </button>
-      <button
+      </DemoActionButton>
+      <DemoActionButton
         className="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600"
         onClick={() => onRespond(ROLE_STATUSES.PENDING)}
       >
         Na čekanju
-      </button>
-      <button
+      </DemoActionButton>
+      <DemoActionButton
         className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
         onClick={() => onRespond(ROLE_STATUSES.REJECTED)}
       >
         Odbij
-      </button>
+      </DemoActionButton>
     </div>
   );
 };

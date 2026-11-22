@@ -1,3 +1,4 @@
+import { DemoActionButton } from "@/components/layout/demoActions";
 import { FaPlus } from "@react-icons/all-files/fa/FaPlus";
 import utils from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -129,15 +130,13 @@ function CreateCA({
           </div>
         </div>
       </Modals.FormModal>
-      <div
+      <DemoActionButton
         onClick={onAdd}
         className={`${newCACoordinates?.planted?.length > 1 ? "flex" : "hidden"} flex flex-col justify-center items-center gap-4 cursor-pointer`}
       >
-        <div>
-          <FaPlus className="text-4xl" />
-        </div>
-        <div className="text-sm">Dodaj polje za sadnju</div>
-      </div>
+        <FaPlus className="text-4xl" />
+        <span className="text-sm">Dodaj polje za sadnju</span>
+      </DemoActionButton>
     </>
   );
 }

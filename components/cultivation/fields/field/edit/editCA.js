@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Modals from "@/components/layout/modals";
 import { AppInput } from "@/components/form/inputs";
-import axios from "axios";
+import api from "@/lib/api";
 import handleError from "@/lib/constants/errors/client/handleError";
 import { deleteCultivationArea } from "@/store/cultivation";
 import { useDispatch } from "react-redux";
@@ -50,8 +50,8 @@ export const EditCA = ({ cultivationAreaMenu, setCultivationAreaMenu }) => {
 
   const onSubmit = async () => {
     try {
-      const res = await axios.put(
-        `/api/cultivation/cultivation-area`,
+      const res = await api.put(
+        `/cultivation/cultivation-area`,
         formData,
       );
       alert("Područje kultivacije je uspješno ažurirano");
@@ -69,7 +69,7 @@ export const EditCA = ({ cultivationAreaMenu, setCultivationAreaMenu }) => {
       return;
     }
     try {
-      await axios.delete(`/api/cultivation/cultivation-area`, {
+      await api.delete(`/cultivation/cultivation-area`, {
         data: { id: formData.id },
       });
       dispatch(deleteCultivationArea(formData.id));
@@ -82,6 +82,7 @@ export const EditCA = ({ cultivationAreaMenu, setCultivationAreaMenu }) => {
   const menuOptions = [
     {
       label: "Uredi",
+      mutatesData: true,
       onClick: () =>
         setCultivationAreaMenu((prev) => ({
           ...prev,

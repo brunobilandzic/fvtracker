@@ -1,5 +1,7 @@
 "use client";
 
+import { DemoActionButton } from "@/components/layout/demoActions";
+
 import styles from "@/components/form/form.module.css";
 import { AppInput, AppSelect } from "@/components/form/inputs";
 import api from "@/lib/api";
@@ -170,12 +172,13 @@ export const CreateWorker = () => {
         )}
       </div>
       <div className={`${styles.footer}       flex justify-center`}>
-        <div
-          className={`btn submitButton btnLg ${submitDisabled() ? "disabled" : ""}`}
-          onClick={submitDisabled() ? undefined : onSubmit}
+        <DemoActionButton
+          className="btn submitButton btnLg disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={onSubmit}
+          disabled={submitDisabled()}
         >
           Kreiraj radnika
-        </div>
+        </DemoActionButton>
       </div>
     </div>
   );

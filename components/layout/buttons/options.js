@@ -1,3 +1,4 @@
+import { DemoActionButton } from "@/components/layout/demoActions";
 import { v4 as uuid } from "uuid";
 
 export function OptionButtons({ options, row = true, small, center }) {
@@ -25,13 +26,14 @@ export const OptionButton = ({ option, small, row }) => {
   if (disabled) return null;
   return (
     <>
-      <div
+      <DemoActionButton
+        mutatesData={option.mutatesData === true}
         onClick={onClick}
         className={`flex flex-col gap-2 items-center justify-center min-w-12 overflow-visible  md:gap-4 btn w-full ${small ? "w-16 h-16 btnSm" : ""} ${row ? "" : "w-full"}`}
       >
-        <div className="text-3xl">{icon}</div>
-        <div className="text-sm text-wrap text-center">{label}</div>
-      </div>
+        <span className="text-3xl">{icon}</span>
+        <span className="text-sm text-wrap text-center">{label}</span>
+      </DemoActionButton>
     </>
   );
 };

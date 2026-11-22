@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { DemoActionLink } from "@/components/layout/demoActions";
 import roleitems, { adminNavItems, guestNavItems } from "./roleitems";
 import { signOut, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
@@ -254,15 +255,18 @@ function NavItem({ item }) {
         <div
           className={`absolute top-full left-0  w-48 bg-gray-800 text-white rounded shadow-lg ${subMenuOpen ? "block" : "hidden"}`}
         >
-          {item.submenu.map((subItem, index) => (
-            <Link
-              key={index}
-              href={subItem.path}
-              className="block px-4 py-2 hover:bg-gray-600"
-            >
-              {subItem.label}
-            </Link>
-          ))}
+          {item.submenu.map((subItem, index) => {
+            const ItemLink = subItem.mutatesData ? DemoActionLink : Link;
+            return (
+              <ItemLink
+                key={index}
+                href={subItem.path}
+                className="block w-full px-4 py-2 text-left hover:bg-gray-600"
+              >
+                {subItem.label}
+              </ItemLink>
+            );
+          })}
         </div>
       </div>
     );

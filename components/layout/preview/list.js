@@ -40,9 +40,9 @@ export function List({
 
   return (
     <>
-      <div className="list-header flex items-center justify-between mb-4 border-b-2 pb-1 ">
+      <div className="list-header mb-4 flex flex-wrap items-center justify-between gap-2 border-b-2 pb-1">
         <div className="text-xl font-bolder">{title}</div>
-        <div className="flex gap-2 items-center">
+        <div className="flex max-w-full flex-wrap items-center gap-2">
           {sortBy && (
             <SortOpenButton
               isOpen={sortOpen}

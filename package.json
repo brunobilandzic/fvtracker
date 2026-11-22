@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "seed:demo": "node --env-file=.env.demo-seed --import ./scripts/register-imports.mjs ./scripts/seed-demo.mjs",
-    "test:demo": "node --test tests/demo-security.test.mjs"
+    "test:demo": "node --test tests/demo-security.test.mjs",
+    "test:demo:e2e": "node scripts/test-demo.mjs",
+    "test:demo:ui": "node scripts/test-demo.mjs --mock-ui"
   },
   "dependencies": {
     "@mynaui/icons-react": "^0.4.3",
@@ -37,6 +39,7 @@
     "esbuild": "0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
+    "playwright-core": "1.65.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.19"
   },

@@ -1,5 +1,7 @@
 "use client";
 
+import { DemoActionButton } from "@/components/layout/demoActions";
+
 import { AppInput, AppTextArea } from "@/components/form/inputs";
 import cultivationConstants from "@/lib/constants/cultivation";
 import { useSession } from "next-auth/react";
@@ -235,9 +237,9 @@ export function CreateFieldPageComponent() {
           />
         ))}
         <div className={`${styles.footer}`}>
-          <div onClick={onSubmit} className="btn submitButton">
+          <DemoActionButton onClick={onSubmit} className="btn submitButton">
             Kreiraj polje
-          </div>
+          </DemoActionButton>
         </div>
       </div>
     </>

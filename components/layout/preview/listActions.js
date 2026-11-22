@@ -1,4 +1,4 @@
-import { v4 as uuid } from "uuid";
+import { DemoActionButton } from "@/components/layout/demoActions";
 
 export const ListHeaderShowButton = ({ label, isOpen, setOpen, onClose }) => {
   const handleClick = () => {
@@ -20,16 +20,17 @@ export const ListHeaderShowButton = ({ label, isOpen, setOpen, onClose }) => {
 
 export const ActionOptions = ({ options }) => {
   return (
-    <div className="flex justify-end gap-2 mt-4">
-      {options.map((option, index) => {
+    <div className="mt-4 flex flex-wrap justify-end gap-2">
+      {options.map((option) => {
         return (
-          <div
+          <DemoActionButton
             className={`btn btnSm ${option.className}`}
             onClick={option.onClick}
+            mutatesData={option.mutatesData}
             key={option.label}
           >
             {option.label}
-          </div>
+          </DemoActionButton>
         );
       })}
     </div>
@@ -38,15 +39,15 @@ export const ActionOptions = ({ options }) => {
 
 export const CreateListItemButton = ({ onCreate, label }) => {
   return (
-    <div className="btn submitButton btnSm" onClick={onCreate}>
+    <DemoActionButton className="btn submitButton btnSm" onClick={onCreate}>
       {label || "Dodaj"}
-    </div>
+    </DemoActionButton>
   );
 };
 export const DeleteListButton = ({ onDelete, label }) => {
   return (
-    <div className="btn cancelButton btnSm" onClick={onDelete}>
+    <DemoActionButton className="btn cancelButton btnSm" onClick={onDelete}>
       {label || "Obriši sve"}
-    </div>
+    </DemoActionButton>
   );
 };
