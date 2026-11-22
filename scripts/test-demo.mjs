@@ -66,7 +66,6 @@ try {
     config = { MONGODB_URI: "mongodb://127.0.0.1:1", DEMO_DB_NAME: "fvtracker_demo_mock" };
   } else {
     config = parseEnv(await readFile(configPath, "utf8"));
-    await access(credentialsPath);
     assert(config.DEMO_MODE === "true" && config.MONGODB_URI && isDedicatedDemoDatabase(config.DEMO_DB_NAME ?? ""));
 
     stage = "read-only demo connection and effective privileges";
@@ -93,6 +92,8 @@ try {
   stage = "local demo server";
   const port = await localPort();
   const origin = "http://127.0.0.1:" + port;
+  const accounts = mocked ? [] : JSON.parse(await readFile(credentialsPath, "utf8"));
+  const passwords = new Map(accounts.map(({ username, password }) => [username, password]));
   const env = {
     ...process.env,
     DEMO_MODE: "true",
@@ -100,6 +101,11 @@ try {
     DEMO_DB_NAME: config.DEMO_DB_NAME,
     AUTH_SECRET: randomBytes(32).toString("base64url"),
     AUTH_URL: origin,
+    DEMO_CULTIVATION_PASSWORD: passwords.get("cm") ?? "",
+    DEMO_PRODUCTION_PASSWORD: passwords.get("pm") ?? "",
+    DEMO_WAREHOUSE_PASSWORD: passwords.get("wm") ?? "",
+    DEMO_FINANCIAL_PASSWORD: passwords.get("fm") ?? "",
+    DEMO_WORKER_PASSWORD: passwords.get("cwe") ?? "",
     FVTRACKER_TEST_ORIGIN: origin,
     FVTRACKER_TEST_CREDENTIALS: credentialsPath,
     FVTRACKER_TEST_MOCK: mocked ? "true" : "false",

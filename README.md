@@ -18,6 +18,20 @@ Use Node.js 24 and run `npm ci`. Copy `.env.example` to `.env.local`. Use a disp
 
 Generate `AUTH_SECRET` privately with `node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('base64url'))"` and store it directly in your secret manager or environment settings. `AUTH_URL` is optional. Set it for a fixed canonical origin or when testing a custom host. Keep every value above out of `NEXT_PUBLIC_*`, source control, and any public portfolio material.
 
+## One-click demo sign-in
+
+With `DEMO_MODE=true`, the homepage offers five existing demo accounts. Copy their existing passwords from the ignored `.demo-credentials.json` file into the corresponding server environment variables. Set them privately in `.env.local` or in the applicable Vercel environment. A missing password makes that card return a safe unavailable message.
+
+| Server variable | Seeded account |
+| --- | --- |
+| `DEMO_CULTIVATION_PASSWORD` | `cm` (Cultivation Manager) |
+| `DEMO_PRODUCTION_PASSWORD` | `pm` (Production Manager) |
+| `DEMO_WAREHOUSE_PASSWORD` | `wm` (Warehouse Manager) |
+| `DEMO_FINANCIAL_PASSWORD` | `fm` (Financial Manager) |
+| `DEMO_WORKER_PASSWORD` | `cwe` (employed Cultivation Worker) |
+
+Keep these variables server-only and keep the credentials file out of source control. Use the existing seeded database and its read-only runtime connection.
+
 ## MongoDB Atlas
 
 1. Create an Atlas project and cluster for the demo. Choose an Atlas region close to the Vercel Function region. Use a fresh database name with the required prefix and keep the database empty until initialization.

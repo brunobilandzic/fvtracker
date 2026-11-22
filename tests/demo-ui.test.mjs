@@ -210,6 +210,78 @@ test("Order deletion shows read-only feedback when a pending order exists",
 
 const realDemo = { skip: mocked ? "requires a server-validated session" : false };
 
+test("One-click demo cards fit mobile and reject an unavailable selection", async () => {
+  await checkPage({ mobile: true }, async page => {
+    await page.goto("/");
+    const section = page.getByRole("region", { name: "Isprobajte FVTracker" });
+    await section.waitFor();
+    assert.equal(await section.getByRole("button", { name: /^Isprobaj/ }).count(), 5);
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+
+    const button = section.getByRole("button", { name: /^Isprobaj/ }).first();
+    if (!mocked) await button.evaluate(element => { element.value = "admin"; });
+    await button.click();
+    await section.getByRole("alert").getByText("Prijava za ovu demo ulogu trenuta\u010dno nije dostupna.").waitFor();
+    assert.equal(new URL(page.url()).pathname, "/");
+    const session = await (await page.request.get("/api/auth/session")).json();
+    assert(!session?.user);
+  });
+});
+
+for (const [role, account, dashboard, identityKey, identityValue] of [
+  ["cultivation", "cm", "/upravljanje-poljima/pregled", "managerModelName", "CultivationManager"],
+  ["production", "pm", "/proizvodi", "managerModelName", "ProductionManager"],
+  ["warehouse", "wm", "/skladisne-jedinice", "managerModelName", "WarehouseManager"],
+  ["financial", "fm", "/narudzbe", "managerModelName", "FinancialManager"],
+  ["worker", "cwe", "/upravljanje-poljima/pregled", "workerType", "CultivationWorker"],
+]) {
+  test(`One-click demo signs in the ${role} account`, realDemo, async () => {
+    const file = process.env.FVTRACKER_TEST_CREDENTIALS ?? ".demo-credentials.json";
+    const credentials = JSON.parse(await readFile(file, "utf8"));
+    const password = credentials.find(record => record.username === account)?.password;
+    assert(Boolean(password), "Expected a seeded password");
+    await checkPage({}, async page => {
+      const homepage = await page.goto("/");
+      assert.equal((await homepage.text()).includes(password), false, "Password in homepage response");
+      let release;
+      const submit = new Promise(resolve => { release = resolve; });
+      let submittedRole = false;
+      let submittedPassword = false;
+      await page.route(url => url.pathname === "/", async route => {
+        if (route.request().method() === "POST") {
+          const data = route.request().postData() ?? "";
+          submittedRole = data.includes(role);
+          submittedPassword = data.includes(password);
+          await submit;
+        }
+        await route.continue();
+      });
+
+      const button = page.locator(`button[name="role"][value="${role}"]`);
+      const actionResponse = page.waitForResponse(response =>
+        response.request().method() === "POST" && new URL(response.url()).pathname === "/");
+      try {
+        await button.click();
+        await page.locator('form[aria-busy="true"]').waitFor();
+        assert(await button.isDisabled());
+      } finally {
+        release();
+      }
+      await page.waitForURL(url => url.pathname === dashboard);
+      assert(submittedRole);
+      assert.equal(submittedPassword, false, "Password in browser submission");
+      assert.equal((await (await actionResponse).text()).includes(password), false, "Password in sign-in response");
+      const session = await (await page.request.get("/api/auth/session")).text();
+      assert.equal(session.includes(password), false, "Password in session response");
+      const { user } = JSON.parse(session);
+      assert.equal(user?.username, account);
+      assert.equal(user[identityKey], identityValue);
+      assert.equal(user.isAdmin, false);
+      await page.getByRole("button", { name: "Odjava" }).first().waitFor();
+    });
+  });
+}
+
 function fullScreenLoader(page) {
   return page.getByRole("status", { name: "U\u010ditavanje sadr\u017eaja" });
 }

@@ -8,7 +8,7 @@ import CustomProviders from "@/lib/providers/custom";
 
 export default function Providers({ children, demoMode, session }) {
   return (
-    <SessionProvider session={session}>
+    <SessionProvider key={session?.user?.appUserId ?? "anonymous"} session={session}>
       <ReduxProvider store={store}>
         <DemoActionProvider demoMode={demoMode}>
           <CustomProviders>{children}</CustomProviders>
