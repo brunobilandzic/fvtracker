@@ -213,18 +213,53 @@ const realDemo = { skip: mocked ? "requires a server-validated session" : false 
 test("One-click demo cards fit mobile and reject an unavailable selection", async () => {
   await checkPage({ mobile: true }, async page => {
     await page.goto("/");
-    const section = page.getByRole("region", { name: "Isprobajte FVTracker" });
+    const section = page.getByRole("region", { name: "Odaberite ulogu za pregled" });
     await section.waitFor();
-    assert.equal(await section.getByRole("button", { name: /^Isprobaj/ }).count(), 8);
+    assert.equal(await section.getByRole("button", { name: /^Isprobaj/ }).count(), 4);
+    assert((await section.getByRole("article").first().boundingBox()).y < 700);
+    await section.getByRole("tab", { name: "Radnici" }).tap();
+    const workerPanel = section.getByRole("tabpanel", { name: "Radnici" });
+    await workerPanel.waitFor();
+    assert.equal(await workerPanel.getByRole("button", { name: /^Isprobaj/ }).count(), 4);
+    const footer = page.getByRole("contentinfo");
+    await footer.scrollIntoViewIfNeeded();
+    await footer.getByText("FVTracker · Diplomski rad · Bruno Bilandžić · OSS Split", { exact: true }).waitFor();
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
 
-    const button = section.getByRole("button", { name: /^Isprobaj/ }).first();
+    const button = workerPanel.getByRole("button", { name: /^Isprobaj/ }).first();
     if (!mocked) await button.evaluate(element => { element.value = "admin"; });
     await button.click();
     await section.getByRole("alert").getByText("Prijava za ovu demo ulogu trenuta\u010dno nije dostupna.").waitFor();
     assert.equal(new URL(page.url()).pathname, "/");
     const session = await (await page.request.get("/api/auth/session")).json();
     assert(!session?.user);
+  });
+});
+
+test("Homepage demo tabs support keyboard selection and expose only the active roles", async () => {
+  await checkPage({}, async page => {
+    await page.goto("/");
+    const managers = page.getByRole("tab", { name: "Menadžeri" });
+    const workers = page.getByRole("tab", { name: "Radnici" });
+    const managerPanel = page.getByRole("tabpanel", { name: "Menadžeri" });
+    assert.equal(await managers.getAttribute("aria-selected"), "true");
+    assert.equal(await managerPanel.getByRole("article").count(), 4);
+    assert(await managerPanel.evaluate(panel => {
+      const cards = [...panel.querySelectorAll("article")];
+      return cards.every(card => card.getBoundingClientRect().top === cards[0].getBoundingClientRect().top);
+    }));
+
+    await managers.focus();
+    await page.keyboard.press("ArrowRight");
+    assert.equal(await workers.getAttribute("aria-selected"), "true");
+    assert.equal(await workers.evaluate(tab => document.activeElement === tab), true);
+    await page.keyboard.press("Tab");
+    assert.equal(await page.evaluate(() => document.activeElement?.value), "worker");
+    assert.equal(await managerPanel.count(), 0);
+    await workers.focus();
+    await page.keyboard.press("Home");
+    assert.equal(await managers.getAttribute("aria-selected"), "true");
+    assert.equal(await managers.evaluate(tab => document.activeElement === tab), true);
   });
 });
 
@@ -246,6 +281,7 @@ for (const [role, account, dashboard, identityKey, identityValue] of [
     await checkPage({}, async page => {
       const homepage = await page.goto("/");
       assert.equal((await homepage.text()).includes(password), false, "Password in homepage response");
+      if (identityKey === "workerType") await page.getByRole("tab", { name: "Radnici" }).click();
       let release;
       const submit = new Promise(resolve => { release = resolve; });
       let submittedRole = false;
@@ -322,18 +358,20 @@ test("Homepage for visitors renders before JavaScript and refreshes without requ
     });
     await withSlowScripts(page, async () => {
       await page.goto("/", { waitUntil: "commit" });
-      await page.getByRole("heading", { name: "Dobrodo\u0161li u FvTracker" }).waitFor();
-      await page.getByRole("link", { name: "Pregledaj proizvode" }).waitFor();
+      await page.getByRole("heading", { name: "FVTracker", exact: true }).waitFor();
+      await page.getByRole("link", { name: "Proizvodi", exact: true }).waitFor();
+      await page.getByText("Demo način rada · Promjene nisu dopuštene", { exact: true }).waitFor();
+      assert.equal(await page.getByRole("link", { name: "Ručna prijava", exact: true }).getAttribute("href"), "/autorizacija");
       assert.equal(await fullScreenLoader(page).count(), 0);
       assert.equal(await page.getByText(/Korisni\u010dko ime:/).count(), 0);
     });
     await page.reload();
-    await page.getByRole("heading", { name: "Dobrodo\u0161li u FvTracker" }).waitFor();
+    await page.getByRole("heading", { name: "FVTracker", exact: true }).waitFor();
     assert.equal(requests(), 0);
     assert.equal(catalogRequests, 0, "The homepage only needs the catalog link");
 
     const catalog = page.waitForResponse(response => new URL(response.url()).pathname === "/api/products");
-    await page.getByRole("link", { name: "Pregledaj proizvode" }).click();
+    await page.getByRole("link", { name: "Proizvodi", exact: true }).click();
     assert.equal((await catalog).status(), 200);
   });
 });
@@ -345,7 +383,7 @@ test("Homepage for signed-in users renders a private profile before JavaScript a
     await withSlowScripts(page, async () => {
       await page.goto("/", { waitUntil: "commit" });
       await profile.waitFor();
-      assert.equal(await page.getByRole("heading", { name: "Dobrodo\u0161li u FvTracker" }).count(), 0);
+      assert.equal(await page.getByRole("heading", { name: "Odaberite ulogu za pregled" }).count(), 0);
       assert.equal(await fullScreenLoader(page).count(), 0);
     });
 
@@ -404,7 +442,7 @@ test("Login and logout update the homepage without a fullscreen loader or redire
     await page.getByRole("button", { name: "Odjava" }).click();
     await page.waitForURL(url => url.pathname === "/autorizacija");
     await page.goto("/");
-    await page.getByRole("heading", { name: "Dobrodo\u0161li u FvTracker" }).waitFor();
+    await page.getByRole("heading", { name: "FVTracker", exact: true }).waitFor();
     assert.equal(await page.getByText("Korisni\u010dko ime: pm", { exact: true }).count(), 0);
     assert.equal(await fullScreenLoader(page).count(), 0);
   });

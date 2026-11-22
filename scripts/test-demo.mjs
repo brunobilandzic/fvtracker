@@ -119,7 +119,7 @@ try {
   for (let attempt = 0; attempt < 40 && server.exitCode === null; attempt++) {
     try {
       const response = await fetch(origin + "/", { signal: AbortSignal.timeout(1000) });
-      ready = response.ok && (await response.text()).includes("Demonstracijski podaci.");
+      ready = response.ok && (await response.text()).includes("Promjene nisu dopuštene");
       if (ready) break;
     } catch {
       // The listener may still be starting.
