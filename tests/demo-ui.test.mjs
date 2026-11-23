@@ -91,6 +91,10 @@ async function seeToast(page) {
   await toast.getByText(message, { exact: true }).waitFor({ state: "visible" });
   assert.equal(await toast.getByText(title, { exact: true }).count(), 1);
   assert.equal(await toast.getAttribute("aria-live"), "polite");
+  const box = await toast.boundingBox();
+  const { width, height } = page.viewportSize();
+  assert(box && Math.abs(box.x + box.width / 2 - width / 2) <= 1 &&
+    Math.abs(box.y + box.height / 2 - height / 2) <= 1, "Toast must be centered in the viewport");
 }
 
 test("mobile create produces one viewport-safe toast for four seconds", async () => {
@@ -214,6 +218,9 @@ test("One-click demo cards fit mobile and reject an unavailable selection", asyn
   await checkPage({ mobile: true }, async page => {
     await page.goto("/");
     await page.getByText(/Za pregled poslovnih modula preporu\u010dujemo ra\u010dunalo/).waitFor();
+    const thesis = page.getByRole("region", { name: "O diplomskom radu" });
+    await thesis.getByText(/Izvorni kod ERP sustava napisao sam ručno/).waitFor();
+    await thesis.getByText("Za diplomski rad dobio sam tri petice.", { exact: true }).waitFor();
     const section = page.getByRole("region", { name: "Odaberite ulogu za pregled" });
     await section.waitFor();
     assert.equal(await section.getByRole("button", { name: /^Isprobaj/ }).count(), 4);

@@ -47,7 +47,7 @@ export default function DemoRoleCards({ roles }) {
   }
 
   return (
-    <section aria-labelledby="demo-roles-title" className="mt-7 border-t border-gray-200 pt-5 sm:mt-8 sm:pt-6">
+    <section aria-labelledby="demo-roles-title" className="mt-5 border-t border-gray-200 pt-4 sm:mt-8 sm:pt-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <h2 id="demo-roles-title" className="text-xl font-semibold tracking-tight sm:text-2xl">
           Odaberite ulogu za pregled

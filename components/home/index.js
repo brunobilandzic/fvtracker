@@ -41,7 +41,19 @@ export default function Home({ demoRoles }) {
           )}
         </div>
         {demo ? (
-          <DemoRoleCards roles={demoRoles} />
+          <>
+            <section aria-labelledby="thesis-title" className="card mt-3 max-w-3xl p-3 sm:mt-5 sm:p-4">
+              <h2 id="thesis-title" className="font-semibold">O diplomskom radu</h2>
+              <p className="mt-1 text-sm text-gray-700">
+                Izvorni kod ERP sustava napisao sam ručno. AI sam koristio samo za pripremu demo verzije
+                i lakši pregled aplikacije.
+              </p>
+              <p className="mt-1 text-sm font-semibold text-green-800">
+                Za diplomski rad dobio sam tri petice.
+              </p>
+            </section>
+            <DemoRoleCards roles={demoRoles} />
+          </>
         ) : (
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/autorizacija" className="btn submitButton">Prijava</Link>

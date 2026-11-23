@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { FiLock } from "react-icons/fi";
 import { interceptDemoWrites } from "@/lib/api";
 
 const DemoActionContext = createContext({ demoMode: false, notify: () => {} });
@@ -39,12 +40,15 @@ export function DemoActionProvider({ demoMode, children }) {
           role="status"
           aria-live="polite"
           aria-atomic="true"
-          className="pointer-events-none fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-[10000] sm:left-auto sm:right-4 sm:w-96"
+          className="pointer-events-none fixed left-1/2 top-1/2 z-[10000] w-[calc(100%_-_2rem)] max-w-md -translate-x-1/2 -translate-y-1/2"
         >
           {visible && (
-            <div className="rounded-lg border-l-4 border-[var(--navbar-bg)] bg-[var(--background)] px-4 py-3 text-sm text-[var(--foreground)] shadow-lg ring-1 ring-black/10">
-              <p className="font-semibold">Demonstracijski način rada</p>
-              <p className="mt-1">Izmjene podataka nisu dopuštene u demo verziji.</p>
+            <div className="rounded-xl border border-green-200 border-t-4 border-t-green-700 bg-white px-5 py-4 text-center shadow-2xl ring-1 ring-black/10">
+              <span className="mx-auto mb-2 grid size-9 place-items-center rounded-full bg-green-100 text-green-800">
+                <FiLock aria-hidden="true" size={18} />
+              </span>
+              <p className="text-base font-bold text-green-900">Demonstracijski način rada</p>
+              <p className="mt-1 text-sm font-medium leading-relaxed text-gray-800">Izmjene podataka nisu dopuštene u demo verziji.</p>
             </div>
           )}
         </div>
